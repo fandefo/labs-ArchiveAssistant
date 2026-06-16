@@ -27,6 +27,9 @@ data class ArchiveAssistantState(
     val deleteConfirmTopicId: String? = null,
     val addItemDialogVisible: Boolean = false,
     val addItemDialogValidationMessage: String? = null,
+    val editingItem: KnowledgeItem? = null,
+    val editItemDialogValidationMessage: String? = null,
+    val deleteConfirmItemId: String? = null,
     val homeSearchQuery: String = "",
 ) {
     val itemsByTopic: Map<String, List<KnowledgeItem>> = items.groupBy { it.topicId }

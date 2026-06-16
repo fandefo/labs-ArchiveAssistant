@@ -1,6 +1,7 @@
 package com.lyihub.archiveassistant.ui.screens
 
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,6 +39,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,9 +47,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -60,6 +63,10 @@ import com.lyihub.archiveassistant.ui.components.PaneContentPadding
 import com.lyihub.archiveassistant.ui.components.PaneDivider
 import com.lyihub.archiveassistant.ui.components.PaneHeader
 import com.lyihub.archiveassistant.ui.components.TextActionButton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.util.UUID
 
 private val DetailTabTypes = listOf(
     ContentType.ALL,
@@ -257,15 +264,22 @@ private fun KnowledgeItemRow(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (item.contentType == ContentType.IMAGE_SCREENSHOT && item.imageResName != null) {
-                val context = androidx.compose.ui.platform.LocalContext.current
-                val resId = context.resources.getIdentifier(
-                    item.imageResName, "drawable", context.packageName
-                )
-                if (resId != 0) {
+            if (item.contentType == ContentType.IMAGE_SCREENSHOT && item.sourceUrl != null) {
+                val path = item.sourceUrl!!
+                var thumbBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+                LaunchedEffect(path) {
+                    thumbBitmap = withContext(Dispatchers.IO) {
+                        try {
+                            BitmapFactory.decodeFile(path)?.asImageBitmap()
+                        } catch (_: Exception) {
+                            null
+                        }
+                    }
+                }
+                thumbBitmap?.let { bmp ->
                     Spacer(modifier = Modifier.height(8.dp))
                     Image(
-                        painter = painterResource(resId),
+                        bitmap = bmp,
                         contentDescription = item.title,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -284,27 +298,87 @@ fun AddItemDialog(
     onDismiss: () -> Unit,
     onConfirm: (String, ContentType, String?, String, Boolean, DocumentFormat?, String?) -> Unit,
     validationMessage: String?,
+    initialItem: KnowledgeItem? = null,
 ) {
-    var title by remember { mutableStateOf("") }
-    var selectedContentType by remember { mutableStateOf(ContentType.WEB_ARTICLE) }
-    var url by remember { mutableStateOf("") }
-    var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
-    var summary by remember { mutableStateOf("") }
-    var useAiSummary by remember { mutableStateOf(false) }
-    var selectedDocumentFormat by remember { mutableStateOf<DocumentFormat?>(null) }
-    var selectedFileName by remember { mutableStateOf<String?>(null) }
+    val isEditMode = initialItem != null
+    var title by remember(initialItem) { mutableStateOf(initialItem?.title ?: "") }
+    var selectedContentType by remember(initialItem) { mutableStateOf(initialItem?.contentType ?: ContentType.WEB_ARTICLE) }
+    var url by remember(initialItem) {
+        mutableStateOf(
+            if (initialItem?.contentType == ContentType.WEB_ARTICLE) initialItem.sourceUrl ?: "" else ""
+        )
+    }
+    var selectedFileUri by remember(initialItem) {
+        mutableStateOf(
+            if (initialItem != null && initialItem.contentType != ContentType.WEB_ARTICLE && initialItem.sourceUrl != null)
+                Uri.parse(initialItem.sourceUrl) else null
+        )
+    }
+    var summary by remember(initialItem) { mutableStateOf(initialItem?.summary ?: "") }
+    var useAiSummary by remember(initialItem) { mutableStateOf(initialItem?.summary.isNullOrBlank() == true) }
+    var selectedDocumentFormat by remember(initialItem) { mutableStateOf(initialItem?.documentFormat) }
+    var selectedFileName by remember(initialItem) { mutableStateOf(initialItem?.fileName) }
+    var selectedImageBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    var selectedLocalFilePath by remember(initialItem) {
+        mutableStateOf(
+            if (initialItem != null && initialItem.contentType != ContentType.WEB_ARTICLE)
+                initialItem.sourceUrl else null
+        )
+    }
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(selectedFileUri) {
+        val uri = selectedFileUri
+        if (uri != null && (uri.scheme == "content" || uri.scheme == "file")) {
+            val file = withContext(Dispatchers.IO) {
+                try {
+                    val itemsDir = File(context.filesDir, "items").also { it.mkdirs() }
+                    val ext = selectedFileName?.substringAfterLast('.', "")
+                        ?.takeIf { it.isNotBlank() }?.let { ".$it" } ?: ""
+                    val dest = File(itemsDir, "${UUID.randomUUID()}$ext")
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        dest.outputStream().use { output -> input.copyTo(output) }
+                    }
+                    dest
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            selectedLocalFilePath = file?.absolutePath
+            selectedImageBitmap = if (file != null && selectedContentType == ContentType.IMAGE_SCREENSHOT) {
+                withContext(Dispatchers.IO) {
+                    BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+                }
+            } else {
+                null
+            }
+        } else {
+            selectedLocalFilePath = null
+            selectedImageBitmap = null
+        }
+    }
+
+    fun detectDocumentFormat(fileName: String?): DocumentFormat? {
+        val ext = fileName?.substringAfterLast('.', "")?.lowercase() ?: return null
+        return DocumentFormat.entries.firstOrNull { it.extension.equals(".$ext", ignoreCase = true) }
+            ?.takeUnless { it == DocumentFormat.UNKNOWN }
+    }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         selectedFileUri = uri
         selectedFileName = uri?.lastPathSegment
+        if (selectedContentType == ContentType.DOCUMENT) {
+            selectedDocumentFormat = detectDocumentFormat(uri?.lastPathSegment)
+        }
     }
 
     fun selectType(type: ContentType) {
         selectedContentType = type
         url = ""
         selectedFileUri = null
+        selectedLocalFilePath = null
         selectedDocumentFormat = null
         selectedFileName = null
     }
@@ -331,7 +405,7 @@ fun AddItemDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "新增资料",
+                        text = if (isEditMode) "修改资料" else "新增资料",
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -394,6 +468,18 @@ fun AddItemDialog(
                     }
 
                     ContentType.IMAGE_SCREENSHOT -> {
+                        selectedImageBitmap?.let { bitmap ->
+                            Image(
+                                bitmap = bitmap,
+                                contentDescription = "已选图片预览",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(12.dp)),
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
                         ActionButton(
                             label = "选择图像文件",
                             onClick = { filePickerLauncher.launch("image/*") },
@@ -409,23 +495,6 @@ fun AddItemDialog(
                     }
 
                     ContentType.DOCUMENT -> {
-                        Text(
-                            text = "文档格式",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            listOf(DocumentFormat.PDF, DocumentFormat.MARKDOWN, DocumentFormat.TXT, DocumentFormat.DOCX).forEach { format ->
-                                FilterChip(
-                                    label = format.label,
-                                    selected = selectedDocumentFormat == format,
-                                    onClick = { selectedDocumentFormat = format },
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
                         ActionButton(
                             label = "选择文档",
                             onClick = { filePickerLauncher.launch("*/*") },
@@ -437,6 +506,27 @@ fun AddItemDialog(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
+                        }
+                        if (selectedDocumentFormat != null) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "识别格式：",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    shape = MaterialTheme.shapes.small,
+                                ) {
+                                    Text(
+                                        text = selectedDocumentFormat!!.label,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -494,11 +584,11 @@ fun AddItemDialog(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     ActionButton(
-                        label = "确认",
+                        label = if (isEditMode) "保存" else "确认",
                         onClick = {
                             val sourceUrl = when (selectedContentType) {
                                 ContentType.WEB_ARTICLE -> url.takeIf { it.isNotBlank() }
-                                else -> selectedFileUri?.toString()
+                                else -> selectedLocalFilePath
                             }
                             val docFormat = if (selectedContentType == ContentType.DOCUMENT) {
                                 selectedDocumentFormat ?: DocumentFormat.UNKNOWN
@@ -517,6 +607,8 @@ fun AddItemDialog(
 fun CardModal(
     item: KnowledgeItem,
     onClose: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     Dialog(onDismissRequest = onClose) {
         Surface(
@@ -566,21 +658,30 @@ fun CardModal(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                if (item.contentType == ContentType.IMAGE_SCREENSHOT && item.imageResName != null) {
-                    val context = androidx.compose.ui.platform.LocalContext.current
-                    val resId = context.resources.getIdentifier(
-                        item.imageResName, "drawable", context.packageName
-                    )
-                    if (resId != 0) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Image(
-                            painter = painterResource(resId),
-                            contentDescription = item.title,
-                            contentScale = ContentScale.FillWidth,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp)),
-                        )
+                if (item.contentType == ContentType.IMAGE_SCREENSHOT) {
+                    if (item.sourceUrl != null) {
+                        val path = item.sourceUrl!!
+                        var bitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+                        LaunchedEffect(path) {
+                            bitmap = withContext(Dispatchers.IO) {
+                                try {
+                                    BitmapFactory.decodeFile(path)?.asImageBitmap()
+                                } catch (_: Exception) {
+                                    null
+                                }
+                            }
+                        }
+                        bitmap?.let { bmp ->
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Image(
+                                bitmap = bmp,
+                                contentDescription = item.title,
+                                contentScale = ContentScale.FillWidth,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp)),
+                            )
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
@@ -616,7 +717,50 @@ fun CardModal(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextActionButton(
+                        label = "删除",
+                        onClick = onDelete,
+                        contentColor = MaterialTheme.colorScheme.error,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    ActionButton(
+                        label = "修改",
+                        onClick = onEdit,
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+fun DeleteItemConfirmDialog(
+    itemTitle: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("确认删除") },
+        text = { Text("确定要删除资料 \"$itemTitle\" 吗？") },
+        confirmButton = {
+            androidx.compose.material3.TextButton(
+                onClick = onConfirm,
+            ) {
+                Text("删除", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(
+                onClick = onDismiss,
+            ) {
+                Text("取消")
+            }
+        },
+    )
 }

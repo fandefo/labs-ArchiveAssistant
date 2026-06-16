@@ -1,5 +1,6 @@
 package com.lyihub.archiveassistant.state
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -17,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.io.File
 
 class ArchiveAssistantStateStore(
     private val classifier: MockKnowledgeClassifier = MockKnowledgeClassifier(),
@@ -26,11 +28,15 @@ class ArchiveAssistantStateStore(
         aiSettings = SampleKnowledgeData.defaultAiEngineSettings,
     ),
     private val appDataRepository: AppDataRepository? = null,
+    androidContext: Context? = null,
 ) {
+    private val appContext = androidContext
     private val scope = CoroutineScope(Dispatchers.IO)
 
     var state: ArchiveAssistantState by mutableStateOf(
-        appDataRepository?.let(::loadPersistedState) ?: initialState
+        resolveMockImagePaths(
+            appDataRepository?.let(::loadPersistedState) ?: initialState
+        )
     )
         private set
 
@@ -55,6 +61,29 @@ class ArchiveAssistantStateStore(
         scope.launch {
             repo.saveAll(state.topics, state.items)
         }
+    }
+
+    private fun resolveMockImagePaths(state: ArchiveAssistantState): ArchiveAssistantState {
+        val context = appContext ?: return state
+        val mapping = mapOf(
+            "item-transformer-diagram" to "transformer_architecture",
+        )
+        val itemsDir = File(context.filesDir, "items").also { it.mkdirs() }
+        return state.copy(
+            items = state.items.map { item ->
+                val drawableName = mapping[item.id] ?: return@map item
+                val dest = File(itemsDir, "$drawableName.png")
+                if (!dest.exists()) {
+                    val resId = context.resources.getIdentifier(drawableName, "drawable", context.packageName)
+                    if (resId != 0) {
+                        context.resources.openRawResource(resId).use { input ->
+                            dest.outputStream().use { output -> input.copyTo(output) }
+                        }
+                    }
+                }
+                item.copy(sourceUrl = dest.absolutePath)
+            }
+        )
     }
 
     private fun deriveNextTopicIndex(topics: List<Topic>): Int {
@@ -216,6 +245,89 @@ class ArchiveAssistantStateStore(
         val topicId = state.deleteConfirmTopicId ?: return
         closeDeleteConfirmDialog()
         deleteTopic(topicId)
+    }
+
+    fun deleteItem(itemId: String) {
+        val deletingModalItem = state.modalItem?.id == itemId
+        state = state.copy(
+            items = state.items.filterNot { it.id == itemId },
+            modalItem = if (deletingModalItem) null else state.modalItem,
+            selectedPane = if (deletingModalItem && state.selectedPane == AppPane.CARD_DETAIL)
+                state.selectedPane.let { if (state.selectedTopicId != null) AppPane.DETAIL else AppPane.TOPICS }
+            else state.selectedPane,
+        )
+        saveData()
+    }
+
+    fun openDeleteItemConfirmDialog(itemId: String) {
+        state = state.copy(deleteConfirmItemId = itemId)
+    }
+
+    fun closeDeleteItemConfirmDialog() {
+        state = state.copy(deleteConfirmItemId = null)
+    }
+
+    fun confirmDeleteItem() {
+        val itemId = state.deleteConfirmItemId ?: return
+        closeDeleteItemConfirmDialog()
+        deleteItem(itemId)
+    }
+
+    fun openEditItemDialog(itemId: String) {
+        val item = state.items.firstOrNull { it.id == itemId } ?: return
+        state = state.copy(editingItem = item, editItemDialogValidationMessage = null)
+    }
+
+    fun closeEditItemDialog() {
+        state = state.copy(editingItem = null, editItemDialogValidationMessage = null)
+    }
+
+    fun confirmEditItem(
+        title: String,
+        contentType: ContentType,
+        sourceUrl: String?,
+        summary: String,
+        useAiSummary: Boolean,
+        documentFormat: DocumentFormat? = null,
+        fileName: String? = null,
+    ) {
+        val originalItem = state.editingItem ?: return
+        val normalizedTitle = title.trim()
+        val normalizedSummary = summary.trim()
+        val normalizedSourceUrl = sourceUrl?.trim()?.takeIf { it.isNotBlank() }
+
+        val validationMessage = when {
+            normalizedTitle.isBlank() -> "请输入资料标题"
+            else -> null
+        }
+
+        if (validationMessage != null) {
+            state = state.copy(editItemDialogValidationMessage = validationMessage)
+            return
+        }
+
+        val finalSummary = if (useAiSummary) "" else normalizedSummary
+        val updatedItem = originalItem.copy(
+            contentType = contentType,
+            tag = contentType.label,
+            title = normalizedTitle,
+            summary = finalSummary,
+            fullText = finalSummary,
+            sourceUrl = normalizedSourceUrl,
+            documentFormat = documentFormat,
+            fileName = fileName,
+        )
+        val now = System.currentTimeMillis()
+        state = state.copy(
+            items = state.items.map { if (it.id == originalItem.id) updatedItem else it },
+            topics = state.topics.map { topic ->
+                if (topic.id == originalItem.topicId) topic.copy(updatedAtEpochMillis = now) else topic
+            },
+            editingItem = null,
+            editItemDialogValidationMessage = null,
+            modalItem = if (state.modalItem?.id == originalItem.id) updatedItem else state.modalItem,
+        )
+        saveData()
     }
 
     fun openTopic(topicId: String) {

@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -46,6 +47,7 @@ fun TextActionButton(
     modifier: Modifier = Modifier,
     testTag: String? = null,
     icon: ImageVector? = null,
+    contentColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     androidx.compose.material3.TextButton(
         onClick = onClick,
@@ -55,14 +57,14 @@ fun TextActionButton(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = contentColor,
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
+            color = contentColor,
         )
     }
 }

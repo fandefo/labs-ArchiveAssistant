@@ -15,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.lyihub.archiveassistant.data.AiEngineSettingsRepository
@@ -27,6 +28,7 @@ import com.lyihub.archiveassistant.ui.layout.rememberWindowLayoutInfo
 import com.lyihub.archiveassistant.ui.layout.shouldShowTwoPanes
 import com.lyihub.archiveassistant.ui.screens.AddItemDialog
 import com.lyihub.archiveassistant.ui.screens.CardModal
+import com.lyihub.archiveassistant.ui.screens.DeleteItemConfirmDialog
 import com.lyihub.archiveassistant.ui.screens.DetailPane
 import com.lyihub.archiveassistant.ui.screens.HomePane
 import com.lyihub.archiveassistant.ui.screens.ManagePane
@@ -39,8 +41,12 @@ fun ArchiveAssistantApp(
     aiSettingsRepository: AiEngineSettingsRepository? = null,
     appDataRepository: AppDataRepository? = null,
 ) {
+    val context = LocalContext.current
     val effectiveStateStore = stateStore ?: androidx.compose.runtime.remember(appDataRepository) {
-        ArchiveAssistantStateStore(appDataRepository = appDataRepository)
+        ArchiveAssistantStateStore(
+            appDataRepository = appDataRepository,
+            androidContext = context,
+        )
     }
     val coroutineScope = rememberCoroutineScope()
     val onAiSettingsChanged: (AiEngineSettings) -> Unit = { settings ->
@@ -88,6 +94,28 @@ fun ArchiveAssistantApp(
             CardModal(
                 item = item,
                 onClose = effectiveStateStore::closeCardModal,
+                onEdit = { effectiveStateStore.openEditItemDialog(item.id) },
+                onDelete = { effectiveStateStore.openDeleteItemConfirmDialog(item.id) },
+            )
+        }
+
+        state.editingItem?.let { item ->
+            AddItemDialog(
+                onDismiss = effectiveStateStore::closeEditItemDialog,
+                onConfirm = { title, contentType, sourceUrl, summary, useAiSummary, documentFormat, fileName ->
+                    effectiveStateStore.confirmEditItem(title, contentType, sourceUrl, summary, useAiSummary, documentFormat, fileName)
+                },
+                validationMessage = state.editItemDialogValidationMessage,
+                initialItem = item,
+            )
+        }
+
+        state.deleteConfirmItemId?.let { itemId ->
+            val deletingItem = state.items.firstOrNull { it.id == itemId }
+            DeleteItemConfirmDialog(
+                itemTitle = deletingItem?.title ?: "",
+                onConfirm = effectiveStateStore::confirmDeleteItem,
+                onDismiss = effectiveStateStore::closeDeleteItemConfirmDialog,
             )
         }
     }

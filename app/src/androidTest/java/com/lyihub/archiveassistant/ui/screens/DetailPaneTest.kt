@@ -128,6 +128,8 @@ class DetailPaneTest {
                 CardModal(
                     item = item,
                     onClose = { closeCalled = true },
+                    onEdit = {},
+                    onDelete = {},
                 )
             }
         }
