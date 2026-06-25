@@ -118,6 +118,7 @@ private val IMPERIAL_GOLD = AndroidColor.rgb(166, 126, 45)
 private val IMPERIAL_GOLD_DARK = AndroidColor.rgb(104, 75, 26)
 private val MEMORIAL_INK_BROWN = AndroidColor.rgb(78, 52, 31)
 private const val TOTAL_PENDING_MEMORIALS = 6
+private const val MEMORIAL_OPEN_CLOSE_DURATION_MS = 5_000L
 
 private data class PendingMemorialSummary(
     val title: String,
@@ -472,6 +473,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
     private var coverPreviewStampTargetStrength = 0f
     private var coverFinalStamp: MemorialStamp? = null
     private var coverFinalStampStrength = 0f
+    private var coverFinalStampFromButton = false
     private var coverStackIndex = 0
     private var coverStackLiftProgress = 1f
     private var summaryVisible = false
@@ -767,6 +769,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
                 coverDragX = coverGestureLastAvgX - coverGestureStartAvgX
                 coverDragY = (coverGestureLastAvgY - coverGestureStartAvgY) * 0.28f
                 coverFinalStamp = null
+                coverFinalStampFromButton = false
                 coverFinalStampStrength = 0f
                 summaryTouchX = coverGestureLastAvgX
                 summaryTouchY = coverGestureLastAvgY
@@ -877,6 +880,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
                 isDragging = false
                 toolbarPressedStamp = null
                 coverFinalStamp = null
+                coverFinalStampFromButton = false
                 coverFinalStampStrength = 0f
                 coverPreviewStampStrength = 0f
                 coverPreviewStampTargetStrength = 0f
@@ -905,6 +909,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         drawCoverStack(canvas, cover, coverLeft)
         val rotation = (coverDragX / max(1f, foldRight - foldLeft)).coerceIn(-1f, 1f) * 10f
         val isRevealingNextCover = currentStamp == null &&
+            coverFinalStamp == null &&
             coverDragX == 0f &&
             coverDragY == 0f &&
             coverStackLiftProgress < 1f
@@ -924,7 +929,9 @@ private class FoldScrollNativeView(context: Context) : View(context) {
             canvas.scale(revealScale, revealScale, coverLeft + cover.width / 2f, cover.top + cover.height / 2f)
         }
         if (coverDragX != 0f || coverDragY != 0f) {
-            canvas.rotate(rotation, coverLeft + cover.width / 2f, cover.top + cover.height * 0.62f)
+            if (!coverFinalStampFromButton) {
+                canvas.rotate(rotation, coverLeft + cover.width / 2f, cover.top + cover.height * 0.62f)
+            }
             canvas.translate(coverDragX, coverDragY)
         }
         drawArticle(
@@ -1184,16 +1191,16 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         }
 
         val completionTitlePaint = TextPaint(titlePaint).apply {
-            textSize = sp(32f)
+            textSize = sp(36f)
             letterSpacing = 0.08f
         }
         val completionBodyPaint = TextPaint(quotePaint).apply {
-            textSize = sp(21f)
+            textSize = sp(24f)
             color = AndroidColor.rgb(72, 43, 31)
             textAlign = Paint.Align.LEFT
         }
         val completionHintPaint = TextPaint(metaPaint).apply {
-            textSize = sp(20f)
+            textSize = sp(23f)
             color = IMPERIAL_GOLD_DARK
         }
 
@@ -1226,11 +1233,30 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         if (strength <= 0f) return
 
         val cx = when (stamp) {
+            coverFinalStamp -> if (coverFinalStampFromButton) {
+                coverLeft + cover.width * 0.5f
+            } else {
+                when (stamp) {
+                    MemorialStamp.Approve -> coverLeft + cover.width * (1f / 3f)
+                    MemorialStamp.Reject -> coverLeft + cover.width * (2f / 3f)
+                    else -> coverLeft + cover.width * 0.5f
+                }
+            }
             MemorialStamp.Approve -> coverLeft + cover.width * (1f / 3f)
             MemorialStamp.Reject -> coverLeft + cover.width * (2f / 3f)
             else -> coverLeft + cover.width * 0.5f
         }
         val cy = when (stamp) {
+            coverFinalStamp -> if (coverFinalStampFromButton) {
+                cover.top + cover.height * 0.64f
+            } else {
+                when (stamp) {
+                    MemorialStamp.Approve,
+                    MemorialStamp.Reject -> cover.top + cover.height * 0.76f
+                    MemorialStamp.Keep -> cover.top + cover.height * 0.72f
+                    else -> cover.top + cover.height * 0.55f
+                }
+            }
             MemorialStamp.Approve,
             MemorialStamp.Reject -> cover.top + cover.height * 0.76f
             MemorialStamp.Keep -> cover.top + cover.height * 0.72f
@@ -2446,7 +2472,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         animateOpenProgress(
             from = 0f,
             to = 1f,
-            durationMs = 1250L,
+            durationMs = MEMORIAL_OPEN_CLOSE_DURATION_MS,
             onFinished = {
                 stage = MemorialStage.Expanded
                 openProgress = 1f
@@ -2455,12 +2481,18 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         )
     }
 
-    private fun startCoverVerdict(stamp: MemorialStamp, dx: Float, verticalDirection: Float) {
+    private fun startCoverVerdict(
+        stamp: MemorialStamp,
+        dx: Float,
+        verticalDirection: Float,
+        fromButton: Boolean = false,
+    ) {
         val initialStampStrength = coverPreviewStampStrength.coerceIn(0f, 1f)
         coverPreviewStamp = stamp
         coverPreviewStampStrength = initialStampStrength
         coverPreviewStampTargetStrength = initialStampStrength
         coverFinalStamp = stamp
+        coverFinalStampFromButton = fromButton
         coverFinalStampStrength = initialStampStrength
         coverStackLiftProgress = 0f
         val startX = coverDragX
@@ -2506,6 +2538,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
                     if (!canceled) {
                         postDelayed({
                             coverFinalStamp = null
+                            coverFinalStampFromButton = false
                             coverFinalStampStrength = 0f
                             coverPreviewStampStrength = 0f
                             coverPreviewStampTargetStrength = 0f
@@ -2526,7 +2559,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
                 coverPreviewStamp = stamp
                 coverPreviewStampStrength = 0f
                 coverPreviewStampTargetStrength = 0f
-                startCoverVerdict(stamp, dx = -dp(96f), verticalDirection = 0f)
+                startCoverVerdict(stamp, dx = -dp(96f), verticalDirection = 0f, fromButton = true)
             }
             MemorialStamp.Approve -> {
                 coverDragX = 0f
@@ -2534,7 +2567,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
                 coverPreviewStamp = stamp
                 coverPreviewStampStrength = 0f
                 coverPreviewStampTargetStrength = 0f
-                startCoverVerdict(stamp, dx = dp(96f), verticalDirection = 0f)
+                startCoverVerdict(stamp, dx = dp(96f), verticalDirection = 0f, fromButton = true)
             }
             MemorialStamp.Keep -> {
                 coverDragX = 0f
@@ -2542,7 +2575,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
                 coverPreviewStamp = stamp
                 coverPreviewStampStrength = 0f
                 coverPreviewStampTargetStrength = 0f
-                startCoverVerdict(stamp, dx = 0f, verticalDirection = -1f)
+                startCoverVerdict(stamp, dx = 0f, verticalDirection = -1f, fromButton = true)
             }
             else -> Unit
         }
@@ -2572,6 +2605,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
                     coverDragX = 0f
                     coverDragY = 0f
                     coverFinalStamp = null
+                    coverFinalStampFromButton = false
                     coverFinalStampStrength = 0f
                     invalidate()
                 }
@@ -2591,6 +2625,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         coverPreviewStampStrength = 0f
         coverPreviewStampTargetStrength = 0f
         coverFinalStamp = null
+        coverFinalStampFromButton = false
         coverFinalStampStrength = 0f
         summaryVisible = false
         summaryPinnedByTap = false
@@ -2615,6 +2650,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
             coverDragY = 0f
             coverPreviewStamp = null
             coverFinalStamp = null
+            coverFinalStampFromButton = false
             coverFinalStampStrength = 0f
             currentStamp = null
             stampProgress = 0f
@@ -2711,6 +2747,9 @@ private class FoldScrollNativeView(context: Context) : View(context) {
                 coverDragY = 0f
                 coverPreviewStamp = null
                 coverStackLiftProgress = 1f
+                coverFinalStamp = null
+                coverFinalStampFromButton = false
+                coverFinalStampStrength = 0f
                 invalidate()
             }
         }
@@ -2740,7 +2779,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
                 animateOpenProgress(
                     from = openProgress.coerceIn(0f, 1f),
                     to = 0f,
-                    durationMs = 860L,
+                    durationMs = MEMORIAL_OPEN_CLOSE_DURATION_MS,
                     onFinished = onFinished,
                 )
             }
@@ -2751,7 +2790,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         animateOpenProgress(
             from = openProgress.coerceIn(0f, 1f),
             to = 0f,
-            durationMs = 860L,
+            durationMs = MEMORIAL_OPEN_CLOSE_DURATION_MS,
             onFinished = onFinished,
         )
     }
