@@ -1448,13 +1448,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
 
         val cx = when (stamp) {
             coverFinalStamp -> if (coverFinalStampFromButton) {
-                when (stamp) {
-                    MemorialStamp.Approve,
-                    MemorialStamp.Like -> coverLeft + cover.width * (1f / 3f)
-                    MemorialStamp.Reject,
-                    MemorialStamp.Dislike -> coverLeft + cover.width * (2f / 3f)
-                    else -> coverLeft + cover.width * 0.5f
-                }
+                coverLeft + cover.width * 0.5f
             } else {
                 when (stamp) {
                     MemorialStamp.Approve,
@@ -3121,14 +3115,14 @@ private class FoldScrollNativeView(context: Context) : View(context) {
                 coverDragX = 0f
                 coverDragY = 0f
                 coverPreviewStamp = stamp
-                coverPreviewStampStrength = 0f
-                coverPreviewStampTargetStrength = 0f
+                coverPreviewStampStrength = 1f
+                coverPreviewStampTargetStrength = 1f
                 startCoverVerdict(
                     stamp = stamp,
                     dx = dx,
                     verticalDirection = 0f,
                     fromButton = true,
-                    motion = CoverVerdictMotion.Button,
+                    motion = CoverVerdictMotion.Gesture,
                 )
             }
             else -> returnToFirstSpread {
