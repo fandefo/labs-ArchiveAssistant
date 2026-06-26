@@ -8,7 +8,6 @@ import com.lyihub.archiveassistant.domain.DocumentFormat
 import com.lyihub.archiveassistant.domain.KnowledgeItem
 import com.lyihub.archiveassistant.domain.LocalModelState
 import com.lyihub.archiveassistant.domain.LocalModelStatus
-import com.lyihub.archiveassistant.domain.SixMinistryCatalog
 import com.lyihub.archiveassistant.domain.Topic
 
 enum class TopicNameDialogMode {
@@ -87,14 +86,9 @@ data class ArchiveAssistantState(
         else -> selectedTopicItems.filter { it.contentType == activeDetailFilter }
     }
 
-    val recentTopics: List<Topic> = run {
-        val topicById = topics.associateBy { it.id }
-        val ministries = SixMinistryCatalog.ministries.mapNotNull { topicById[it.topicId] }
-        val extras = topics
-            .filterNot { it.id in SixMinistryCatalog.topicIds }
-            .sortedByDescending { it.updatedAtEpochMillis }
-        (ministries + extras).take(6)
-    }
+    val recentTopics: List<Topic> = topics
+        .sortedByDescending { it.updatedAtEpochMillis }
+        .take(5)
 
     val searchedTopics: List<Topic> = if (homeSearchQuery.isBlank()) {
         recentTopics

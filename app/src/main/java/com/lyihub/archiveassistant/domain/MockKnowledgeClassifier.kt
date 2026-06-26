@@ -50,16 +50,19 @@ class MockKnowledgeClassifier(
 
     private fun selectTopic(input: String, topics: List<Topic>): Topic {
         val lowerInput = input.lowercase()
-        val preferredMinistry = SixMinistryCatalog.ministries.firstOrNull { profile ->
-            profile.keywords.any { keyword -> keyword.lowercase() in lowerInput }
-        } ?: SixMinistryCatalog.profileForTopicId(SampleKnowledgeData.DefaultTopicId)
-        return topics.firstOrNull { it.id == preferredMinistry?.topicId }
+        val preferredTitle = when {
+            listOf("ui", "ux", "design", "interface", "界面", "交互", "设计").any { it in lowerInput } -> "UX/UI 灵感板"
+            listOf("anthropology", "fieldwork", "人类学", "田野", "仪式").any { it in lowerInput } -> "阅读剪报：人类学"
+            listOf("travel", "trip", "旅行", "目的地").any { it in lowerInput } -> "冷门旅行地参考"
+            else -> "大模型架构研究"
+        }
+        return topics.firstOrNull { it.title == preferredTitle }
             ?: topics.firstOrNull()
             ?: Topic(
                 id = SampleKnowledgeData.DefaultTopicId,
-                title = SixMinistryCatalog.profileForTopicId(SampleKnowledgeData.DefaultTopicId)?.title ?: "工部 · 技术产品",
+                title = "大模型架构研究",
                 iconName = "folder-spark",
-                iconColor = SixMinistryCatalog.profileForTopicId(SampleKnowledgeData.DefaultTopicId)?.colorHex ?: "#2F7D72",
+                iconColor = "#b85c38",
                 updatedAtEpochMillis = 1_715_000_000_000,
             )
     }
