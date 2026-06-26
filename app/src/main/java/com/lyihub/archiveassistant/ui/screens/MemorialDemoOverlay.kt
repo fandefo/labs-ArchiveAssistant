@@ -136,7 +136,6 @@ private val MEMORIAL_INK_BROWN = AndroidColor.rgb(78, 52, 31)
 private const val TOTAL_PENDING_MEMORIALS = 6
 private const val MEMORIAL_OPEN_CLOSE_DURATION_MS = 1_600L
 private const val COVER_VERDICT_DURATION_MS = 1_500L
-private const val COVER_SWITCH_DURATION_MS = 360L
 private const val SUMMARY_FADE_DURATION_MS = 150L
 
 private data class PendingMemorialSummary(
@@ -494,7 +493,6 @@ private class FoldScrollNativeView(context: Context) : View(context) {
     private var coverDragX = 0f
     private var coverDragY = 0f
     private var coverSwipeAnimator: ValueAnimator? = null
-    private var coverStackAnimator: ValueAnimator? = null
     private var coverPreviewStamp: MemorialStamp? = null
     private var coverPreviewStampStrength = 0f
     private var coverPreviewStampTargetStrength = 0f
@@ -545,7 +543,6 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         if (
             stage == MemorialStage.CoverOnly &&
             coverSwipeAnimator == null &&
-            coverStackAnimator == null &&
             currentStamp == null &&
             (coverTouchStartedOnCover || coverSummaryPressed)
         ) {
@@ -576,8 +573,6 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         openProgress = 0f
         completedAlpha = 0f
         clearAttachedCoverStamp()
-        coverStackAnimator?.cancel()
-        coverStackAnimator = null
         summaryAnimator?.cancel()
         summaryAnimator = null
         summaryAlpha = 0f
@@ -607,8 +602,6 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         scrollReturnAnimator = null
         coverSwipeAnimator?.cancel()
         coverSwipeAnimator = null
-        coverStackAnimator?.cancel()
-        coverStackAnimator = null
         summaryAnimator?.cancel()
         summaryAnimator = null
         stampAnimator?.cancel()
@@ -771,8 +764,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         if (
             currentStamp != null ||
             coverFinalStamp != null ||
-            coverSwipeAnimator != null ||
-            coverStackAnimator != null
+            coverSwipeAnimator != null
         ) {
             return true
         }
@@ -963,26 +955,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         val coverLeft = coverStackLeft(cover)
         drawCoverStackLayer(canvas, coverStackAlpha())
         val rotation = (coverDragX / max(1f, foldRight - foldLeft)).coerceIn(-1f, 1f) * 10f
-        val isRevealingNextCover = currentStamp == null &&
-            coverFinalStamp == null &&
-            coverDragX == 0f &&
-            coverDragY == 0f &&
-            coverStackLiftProgress < 1f
-        val revealRest = 1f - coverStackLiftProgress.coerceIn(0f, 1f)
-        val revealOffsetX = if (isRevealingNextCover) stackOffsetX(1) * revealRest else 0f
-        val revealOffsetY = if (isRevealingNextCover) stackOffsetY(1) * revealRest else 0f
-        val revealScale = if (isRevealingNextCover) {
-            lerp(1f, stackScale(1), revealRest)
-        } else {
-            1f
-        }
-        val revealRotation = if (isRevealingNextCover) stackRotation(1) * revealRest else 0f
         canvas.save()
-        if (isRevealingNextCover) {
-            canvas.translate(revealOffsetX, revealOffsetY)
-            canvas.rotate(revealRotation, coverLeft + cover.width / 2f, cover.top + cover.height / 2f)
-            canvas.scale(revealScale, revealScale, coverLeft + cover.width / 2f, cover.top + cover.height / 2f)
-        }
         if (coverDragX != 0f || coverDragY != 0f) {
             canvas.rotate(rotation, coverLeft + cover.width / 2f, cover.top + cover.height * 0.62f)
             canvas.translate(coverDragX, coverDragY)
@@ -1104,13 +1077,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         val remaining = (TOTAL_PENDING_MEMORIALS - coverStackIndex - 1).coerceAtLeast(0)
         val stackCount = min(remaining, 5)
         val isVerdictLeaving = coverFinalStamp != null || currentStamp != null
-        val isLiftingTopCover = currentStamp == null &&
-            !isVerdictLeaving &&
-            abs(coverDragX) < 0.5f &&
-            abs(coverDragY) < 0.5f &&
-            coverStackLiftProgress < 1f
         for (level in stackCount downTo 1) {
-            if (isLiftingTopCover && level == 1) continue
             val lift = if (level == 1 && isVerdictLeaving) coverStackLiftProgress.coerceIn(0f, 1f) else 0f
             val offsetX = stackOffsetX(level) * (1f - lift)
             val offsetY = stackOffsetY(level) * (1f - lift)
@@ -3020,34 +2987,8 @@ private class FoldScrollNativeView(context: Context) : View(context) {
         removeCallbacks(showSummaryRunnable)
         coverSwipeAnimator?.cancel()
         coverSwipeAnimator = null
-        coverStackAnimator?.cancel()
-        coverStackLiftProgress = 0f
-        coverStackAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = COVER_SWITCH_DURATION_MS
-            interpolator = PathInterpolator(0.24f, 0f, 0.18f, 1f)
-            addUpdateListener { animator ->
-                coverStackLiftProgress = animator.animatedValue as Float
-                invalidate()
-            }
-            addListener(object : AnimatorListenerAdapter() {
-                private var canceled = false
-
-                override fun onAnimationCancel(animation: Animator) {
-                    canceled = true
-                }
-
-                override fun onAnimationEnd(animation: Animator) {
-                    if (coverStackAnimator == animation) {
-                        coverStackAnimator = null
-                    }
-                    if (!canceled) {
-                        coverStackLiftProgress = 1f
-                        invalidate()
-                    }
-                }
-            })
-            start()
-        }
+        coverStackLiftProgress = 1f
+        invalidate()
     }
 
     private fun advanceAfterVerdict() {
@@ -3135,7 +3076,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
     }
 
     private fun startStampAndDismiss(stamp: MemorialStamp) {
-        if (currentStamp != null || coverSwipeAnimator != null || coverStackAnimator != null) return
+        if (currentStamp != null || coverSwipeAnimator != null) return
         when (stamp) {
             MemorialStamp.Like,
             MemorialStamp.Dislike -> returnToCoverForVerdict {
