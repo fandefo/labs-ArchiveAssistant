@@ -16,6 +16,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
@@ -473,6 +474,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
     private val coverActionSummaryRect = RectF()
     private val coverActionOpenRect = RectF()
     private val alphaLayerRect = RectF()
+    private val coverTextureSrcRect = Rect()
     private val paperClipPath = Path()
 
     private var velocityTracker: VelocityTracker? = null
@@ -2015,7 +2017,7 @@ private class FoldScrollNativeView(context: Context) : View(context) {
 
     private fun drawCoverBackground(canvas: Canvas, rect: RectF, coverSequenceIndex: Int) {
         coverTextureFor(coverSequenceIndex)?.let { texture ->
-            canvas.drawBitmap(texture, null, rect, coverPaint)
+            drawBitmapCenterCrop(canvas, texture, rect, coverPaint)
         } ?: run {
             articlePaint.color = AndroidColor.rgb(122, 62, 42)
             canvas.drawRect(rect, articlePaint)
@@ -2039,16 +2041,30 @@ private class FoldScrollNativeView(context: Context) : View(context) {
     }
 
     private fun coverTextureFor(coverSequenceIndex: Int): Bitmap? {
-        return if (coverTextures.isNotEmpty()) {
-            coverTextures[positiveModulo(coverSequenceIndex, coverTextures.size)] ?: fallbackCoverTexture
-        } else {
-            fallbackCoverTexture
-        }
+        if (coverSequenceIndex <= 0) return fallbackCoverTexture
+        if (coverTextures.isEmpty()) return fallbackCoverTexture
+        val textureIndex = coverSequenceIndex - 1
+        return coverTextures[positiveModulo(textureIndex, coverTextures.size)] ?: fallbackCoverTexture
     }
 
     private fun positiveModulo(value: Int, modulo: Int): Int {
         val remainder = value % modulo
         return if (remainder >= 0) remainder else remainder + modulo
+    }
+
+    private fun drawBitmapCenterCrop(canvas: Canvas, bitmap: Bitmap, dst: RectF, paint: Paint) {
+        val bitmapRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+        val dstRatio = dst.width() / dst.height()
+        if (bitmapRatio > dstRatio) {
+            val srcWidth = bitmap.height * dstRatio
+            val left = (bitmap.width - srcWidth) / 2f
+            coverTextureSrcRect.set(left.roundToInt(), 0, (left + srcWidth).roundToInt(), bitmap.height)
+        } else {
+            val srcHeight = bitmap.width / dstRatio
+            val top = (bitmap.height - srcHeight) / 2f
+            coverTextureSrcRect.set(0, top.roundToInt(), bitmap.width, (top + srcHeight).roundToInt())
+        }
+        canvas.drawBitmap(bitmap, coverTextureSrcRect, dst, paint)
     }
 
     private fun drawPaperBackground(canvas: Canvas, rect: RectF, rotated: Boolean) {
