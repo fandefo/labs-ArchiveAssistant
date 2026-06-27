@@ -88,7 +88,6 @@ import com.lyihub.archiveassistant.ui.components.TextActionButton
 import com.lyihub.archiveassistant.ui.theme.ImperialBronze
 import com.lyihub.archiveassistant.ui.theme.ImperialCinnabar
 import com.lyihub.archiveassistant.ui.theme.ImperialIvory
-import com.lyihub.archiveassistant.ui.theme.ImperialLightGold
 import com.lyihub.archiveassistant.ui.theme.ImperialParchment
 import com.lyihub.archiveassistant.ui.theme.ImperialUmber
 import kotlinx.coroutines.Dispatchers
@@ -99,23 +98,12 @@ import com.lyihub.archiveassistant.data.resolveDisplayName
 import com.lyihub.archiveassistant.data.uniqueImportFile
 import java.io.File
 
-private val DetailTabTypes = listOf(
-    ContentType.ALL,
-    ContentType.WEB_ARTICLE,
-    ContentType.IMAGE_SCREENSHOT,
-    ContentType.DOCUMENT,
-)
-
 private val DetailPalaceGreen = ImperialIvory
-private val DetailPalaceGreenMid = ImperialParchment
-private val DetailPalaceGreenDark = ImperialUmber
 private val DetailPalaceGold = Color.Black
-private val DetailPalaceGoldBlock = ImperialLightGold
 private val DetailPaper = ImperialIvory
 private val DetailPaperDeep = ImperialParchment
 private val DetailInk = Color.Black
 private val DetailCinnabar = ImperialCinnabar
-private val DetailLine = ImperialBronze
 
 private const val FileProviderAuthoritySuffix = ".fileprovider"
 
@@ -146,12 +134,9 @@ private fun writeMarkdownPrefillFile(context: Context, title: String, content: S
 fun DetailPane(
     topic: Topic,
     items: List<KnowledgeItem>,
-    activeFilter: ContentType,
     searchQuery: String,
     onBack: () -> Unit,
-    onFilterSelected: (ContentType) -> Unit,
     onItemClick: (String) -> Unit,
-    onAddItemClick: () -> Unit,
     modifier: Modifier = Modifier,
     showBackButton: Boolean = true,
 ) {
@@ -174,33 +159,34 @@ fun DetailPane(
                 alpha = 0.28f,
             )
             PaperVeil(modifier = Modifier.matchParentSize())
-            val expanded = maxWidth >= 520.dp
-            val horizontalPadding = if (expanded) 28.dp else 16.dp
+            val expanded = maxWidth >= 620.dp
+            val horizontalPadding = if (expanded) 36.dp else 24.dp
+            val topPadding = if (expanded) 56.dp else 40.dp
             val maxContentWidth = if (expanded) 980.dp else 560.dp
+
+            DetailCourtHeader(
+                topic = topic,
+                itemCount = items.size,
+                onBack = onBack,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = horizontalPadding, top = topPadding, end = horizontalPadding)
+                    .widthIn(max = maxContentWidth),
+                expanded = expanded,
+                showBackButton = showBackButton,
+            )
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     start = horizontalPadding,
-                    top = if (expanded) 22.dp else 16.dp,
+                    top = if (expanded) 190.dp else 156.dp,
                     end = horizontalPadding,
                     bottom = 28.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(if (expanded) 16.dp else 14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                item {
-                    DetailCourtHeader(
-                        topic = topic,
-                        itemCount = items.size,
-                        activeFilter = activeFilter,
-                        onBack = onBack,
-                        onAddItemClick = onAddItemClick,
-                        onFilterSelected = onFilterSelected,
-                        modifier = Modifier.widthIn(max = maxContentWidth),
-                        showBackButton = showBackButton,
-                    )
-                }
                 if (items.isEmpty()) {
                     item {
                         EmptyMemorialShelf(
@@ -266,16 +252,14 @@ private fun hasArticleImage(item: KnowledgeItem): Boolean {
 private fun DetailCourtHeader(
     topic: Topic,
     itemCount: Int,
-    activeFilter: ContentType,
     onBack: () -> Unit,
-    onAddItemClick: () -> Unit,
-    onFilterSelected: (ContentType) -> Unit,
     modifier: Modifier = Modifier,
+    expanded: Boolean,
     showBackButton: Boolean,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(if (expanded) 10.dp else 8.dp),
     ) {
         if (showBackButton) {
             Row(
@@ -290,110 +274,23 @@ private fun DetailCourtHeader(
                         tint = DetailPalaceGold,
                     )
                 }
-                DetailIconAction(
-                    onClick = onAddItemClick,
-                    testTag = "detail-add-item-button",
-                    contentDescription = "新增资料",
-                )
             }
         }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            DecorativeDetailImage(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 18.dp)
-                    .size(108.dp),
-                alpha = 0.16f,
-                tint = DetailPalaceGold,
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = if (showBackButton) 12.dp else 18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text(
-                    text = topic.title,
-                    style = MaterialTheme.typography.displayLarge,
-                    color = DetailPalaceGold,
-                    fontWeight = FontWeight.Normal,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = "尚书归档，共 $itemCount 篇。两列铺陈，便于快速浏览、筛选与复查。",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = DetailInk.copy(alpha = 0.78f),
-                )
-            }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("detail-tabs"),
-            horizontalArrangement = Arrangement.spacedBy(1.dp),
-        ) {
-            DetailTabTypes.forEach { type ->
-                DetailFilterSeal(
-                    label = type.label,
-                    selected = activeFilter == type,
-                    onClick = { onFilterSelected(type) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DetailIconAction(
-    onClick: () -> Unit,
-    testTag: String,
-    contentDescription: String,
-) {
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .background(DetailPalaceGoldBlock)
-            .border(1.dp, DetailPalaceGold)
-            .clickable(onClick = onClick)
-            .testTag(testTag),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = Icons.Default.Add,
-            contentDescription = contentDescription,
-            tint = DetailPalaceGreenDark,
-        )
-    }
-}
-
-@Composable
-private fun DetailFilterSeal(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val background = if (selected) DetailPalaceGoldBlock else DetailPalaceGreenMid
-    val content = if (selected) DetailPalaceGreenDark else DetailPalaceGold
-    Box(
-        modifier = modifier
-            .height(42.dp)
-            .background(background)
-            .border(1.dp, DetailLine)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
         Text(
-            text = label,
-            style = MaterialTheme.typography.titleSmall,
-            color = content,
+            text = topic.title,
+            style = if (expanded) MaterialTheme.typography.displayLarge else MaterialTheme.typography.displayMedium,
+            color = DetailPalaceGold,
             fontWeight = FontWeight.Normal,
-            maxLines = 1,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = "尚书归档，共 $itemCount 篇。两列铺陈，便于快速浏览、筛选与复查。",
+            style = if (expanded) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyMedium,
+            color = DetailInk.copy(alpha = 0.78f),
+            modifier = Modifier
+                .fillMaxWidth(if (expanded) 0.38f else 0.56f)
+                .testTag("detail-summary"),
         )
     }
 }

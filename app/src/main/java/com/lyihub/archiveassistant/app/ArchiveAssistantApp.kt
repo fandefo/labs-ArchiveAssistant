@@ -539,12 +539,9 @@ private fun SinglePaneLayout(
                 DetailPane(
                     topic = topic,
                     items = state.filteredSelectedTopicItems,
-                    activeFilter = state.activeDetailFilter,
                     searchQuery = state.homeSearchQuery,
                     onBack = stateStore::closePanes,
-                    onFilterSelected = stateStore::selectFilter,
                     onItemClick = stateStore::openCardModal,
-                    onAddItemClick = stateStore::openAddItemDialog,
                 )
             } else {
                 HomePane(
@@ -624,12 +621,9 @@ private fun SinglePaneLayout(
                 DetailPane(
                     topic = topic,
                     items = state.filteredSelectedTopicItems,
-                    activeFilter = state.activeDetailFilter,
                     searchQuery = state.homeSearchQuery,
                     onBack = stateStore::closeCardModal,
-                    onFilterSelected = stateStore::selectFilter,
                     onItemClick = stateStore::openCardModal,
-                    onAddItemClick = stateStore::openAddItemDialog,
                 )
             } else {
                 HomePane(
@@ -702,12 +696,9 @@ private fun WideWorkspaceLayout(
                             DetailPane(
                                 topic = topic,
                                 items = state.filteredSelectedTopicItems,
-                                activeFilter = state.activeDetailFilter,
                                 searchQuery = state.homeSearchQuery,
                                 onBack = stateStore::closePanes,
-                                onFilterSelected = stateStore::selectFilter,
                                 onItemClick = stateStore::openCardModal,
-                                onAddItemClick = stateStore::openAddItemDialog,
                                 showBackButton = false,
                             )
                         } else {

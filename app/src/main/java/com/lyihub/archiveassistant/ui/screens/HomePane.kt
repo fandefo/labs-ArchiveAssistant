@@ -640,7 +640,7 @@ private fun MinistryHeaderRow(
             .fillMaxWidth()
             .height(56.dp),
         color = PalaceGreenDark,
-        contentColor = PalaceGold,
+        contentColor = ImperialIvory,
     ) {
         Column(
             modifier = Modifier
@@ -650,13 +650,13 @@ private fun MinistryHeaderRow(
             Text(
                 text = "尚书省",
                 style = MaterialTheme.typography.titleLarge,
-                color = PalaceGold,
+                color = ImperialIvory,
                 fontWeight = FontWeight.Normal,
             )
             Text(
                 text = if (searchQuery.isBlank()) "六个固定文件夹" else "按「$searchQuery」检出 $resultCount 类",
                 style = MaterialTheme.typography.bodySmall,
-                color = ImperialUmber.copy(alpha = 0.62f),
+                color = ImperialIvory.copy(alpha = 0.72f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

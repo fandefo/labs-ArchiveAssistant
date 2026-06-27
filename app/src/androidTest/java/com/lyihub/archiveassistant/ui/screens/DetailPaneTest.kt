@@ -32,53 +32,25 @@ class DetailPaneTest {
     private val defaultItems = SampleKnowledgeData.items.filter { it.topicId == SampleKnowledgeData.DefaultTopicId }
 
     @Test
-    fun detailPane_displaysTabsAndCards() {
+    fun detailPane_displaysHeaderAndCards() {
         composeTestRule.setContent {
             ArchiveAssistantTheme {
                 DetailPane(
                     topic = defaultTopic,
                     items = defaultItems,
-                    activeFilter = ContentType.ALL,
-                    onBack = {},
-                    onFilterSelected = {},
-                    onItemClick = {},
-                    onAddItemClick = {},
                     searchQuery = "",
+                    onBack = {},
+                    onItemClick = {},
                 )
             }
         }
 
         composeTestRule.onNodeWithTag("detail-pane").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("detail-tabs").assertIsDisplayed()
+        composeTestRule.onNodeWithText(defaultTopic.title).assertIsDisplayed()
+        composeTestRule.onNodeWithTag("detail-summary").assertIsDisplayed()
         defaultItems.forEach { item ->
             composeTestRule.onNodeWithTag("knowledge-card-${item.id}").assertIsDisplayed()
         }
-    }
-
-    @Test
-    fun detailPane_filterTabs_switchFilter() {
-        var selectedFilter: ContentType? = null
-
-        composeTestRule.setContent {
-            ArchiveAssistantTheme {
-                DetailPane(
-                    topic = defaultTopic,
-                    items = defaultItems,
-                    activeFilter = ContentType.ALL,
-                    onBack = {},
-                    onFilterSelected = { selectedFilter = it },
-                    onItemClick = {},
-                    onAddItemClick = {},
-                    searchQuery = "",
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithText("文档").performClick()
-        assertEquals(ContentType.DOCUMENT, selectedFilter)
-
-        composeTestRule.onNodeWithText("网页").performClick()
-        assertEquals(ContentType.WEB_ARTICLE, selectedFilter)
     }
 
     @Test
@@ -88,17 +60,14 @@ class DetailPaneTest {
                 DetailPane(
                     topic = defaultTopic,
                     items = emptyList(),
-                    activeFilter = ContentType.DOCUMENT,
-                    onBack = {},
-                    onFilterSelected = {},
-                    onItemClick = {},
-                    onAddItemClick = {},
                     searchQuery = "",
+                    onBack = {},
+                    onItemClick = {},
                 )
             }
         }
 
-        composeTestRule.onNodeWithTag("detail-tabs").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("detail-summary").assertIsDisplayed()
         composeTestRule.onNodeWithText("该分类下暂无资料").assertIsDisplayed()
     }
 
@@ -111,12 +80,9 @@ class DetailPaneTest {
                 DetailPane(
                     topic = defaultTopic,
                     items = defaultItems,
-                    activeFilter = ContentType.ALL,
-                    onBack = {},
-                    onFilterSelected = {},
-                    onItemClick = { clickedItemId = it },
-                    onAddItemClick = {},
                     searchQuery = "",
+                    onBack = {},
+                    onItemClick = { clickedItemId = it },
                 )
             }
         }
