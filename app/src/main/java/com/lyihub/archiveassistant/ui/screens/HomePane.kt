@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.annotation.DrawableRes
@@ -188,7 +189,7 @@ private fun ColumnScope.HomeMosaic(
         onOpenSettings = onOpenSettings,
         modifier = Modifier
             .fillMaxWidth()
-            .height(140.dp),
+            .height(118.dp),
     )
     PrimaryActionRow(
         pendingCount = pendingCount,
@@ -196,7 +197,7 @@ private fun ColumnScope.HomeMosaic(
         onOpenMemorialDemo = onOpenMemorialDemo,
         modifier = Modifier
             .fillMaxWidth()
-            .height(108.dp),
+            .height(92.dp),
     )
     SearchCell(
         searchQuery = searchQuery,
@@ -205,9 +206,9 @@ private fun ColumnScope.HomeMosaic(
         smartSummarizationMessage = smartSummarizationMessage,
         modifier = Modifier
             .fillMaxWidth()
-            .height(104.dp),
+            .height(94.dp),
     )
-    WorkflowRow(modifier = Modifier.height(76.dp))
+    WorkflowRow(modifier = Modifier.height(72.dp))
     MinistryControlRow(
         searchQuery = searchQuery,
         resultCount = folders.count { it.topic != null },
@@ -215,7 +216,7 @@ private fun ColumnScope.HomeMosaic(
         onOpenManage = onOpenManage,
         modifier = Modifier
             .fillMaxWidth()
-            .height(90.dp),
+            .height(72.dp),
     )
     FolderResultList(
         folders = folders,
@@ -244,7 +245,7 @@ private fun TitleCell(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    MosaicCell(
+    PlainCell(
         modifier = modifier.fillMaxSize(),
         color = PalaceGreen,
         contentColor = PalaceGold,
@@ -297,7 +298,7 @@ private fun PalaceActionCell(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    MosaicCell(
+    PlainCell(
         modifier = modifier
             .fillMaxSize()
             .clickable(enabled = enabled, onClick = onClick)
@@ -313,9 +314,9 @@ private fun PalaceActionCell(
             },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(12.dp)
-                .size(56.dp),
-            alpha = 0.28f,
+                .padding(10.dp)
+                .size(46.dp),
+            alpha = 0.22f,
             tint = contentColor,
         )
         Text(
@@ -324,12 +325,12 @@ private fun PalaceActionCell(
             color = contentColor.copy(alpha = 0.7f),
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(14.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
         )
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(14.dp),
+                .padding(12.dp),
         ) {
             Text(
                 text = title,
@@ -386,7 +387,7 @@ private fun SearchCell(
     smartSummarizationMessage: String?,
     modifier: Modifier = Modifier,
 ) {
-    MosaicCell(
+    PlainCell(
         modifier = modifier.fillMaxSize(),
         color = PalacePaper,
         contentColor = PalaceInk,
@@ -394,7 +395,7 @@ private fun SearchCell(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(14.dp),
+                .padding(12.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(
@@ -462,7 +463,7 @@ private fun MemorialCell(
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    MosaicCell(
+    PlainCell(
         modifier = modifier
             .fillMaxSize()
             .clickable(enabled = onClick != null) { onClick?.invoke() }
@@ -474,15 +475,15 @@ private fun MemorialCell(
             imageRes = R.drawable.imperial_ornament_gourd,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 14.dp)
-                .size(82.dp),
-            alpha = 0.24f,
+                .padding(end = 8.dp)
+                .size(60.dp),
+            alpha = 0.18f,
             tint = PalaceGreenDark,
         )
         Column(
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 12.dp),
         ) {
             Text(
                 text = "批奏折",
@@ -509,13 +510,12 @@ private fun WorkflowRow(modifier: Modifier = Modifier) {
     ) {
         WorkflowCell("中书", "拾取、摘要、拟题", Modifier.weight(1f))
         WorkflowCell("门下", "筛选、递奏、待批", Modifier.weight(1f))
-        WorkflowCell("尚书", "六部归藏", Modifier.weight(1f))
     }
 }
 
 @Composable
 private fun WorkflowCell(title: String, subtitle: String, modifier: Modifier = Modifier) {
-    MosaicCell(
+    PlainCell(
         modifier = modifier.fillMaxSize(),
         color = PalaceGreen,
         contentColor = PalaceGold,
@@ -523,7 +523,7 @@ private fun WorkflowCell(title: String, subtitle: String, modifier: Modifier = M
         Column(
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(horizontal = 14.dp),
+                .padding(horizontal = 12.dp),
         ) {
             Text(
                 text = title,
@@ -553,7 +553,7 @@ private fun MinistryControlRow(
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         MinistryActionButton(
             title = "尚书省",
@@ -591,7 +591,7 @@ private fun MinistryActionButton(
     enabled: Boolean = true,
     highlight: Boolean = false,
 ) {
-    MosaicCell(
+    PlainCell(
         modifier = modifier
             .fillMaxSize()
             .clickable(enabled = enabled, onClick = onClick)
@@ -604,7 +604,7 @@ private fun MinistryActionButton(
         Column(
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 12.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
@@ -633,7 +633,7 @@ private fun ColumnScope.FolderResultList(
     compact: Boolean,
 ) {
     if (folders.isEmpty()) {
-        MosaicCell(
+        PlainCell(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(if (compact) 96.dp else 112.dp),
@@ -686,7 +686,7 @@ private fun MinistryTicketCard(
 ) {
     val enabled = folder.topic != null
     val bodyColor = visual.background
-    val imageSize = if (compact) 78.dp else 104.dp
+    val imageSize = if (compact) 58.dp else 88.dp
     val titleStyle = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge
     val summaryStyle = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
     Box(
@@ -731,9 +731,9 @@ private fun MinistryTicketCard(
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 16.dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
+                .padding(start = 12.dp, top = 9.dp, end = 10.dp, bottom = 9.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Column(
                 modifier = Modifier.weight(1f),
@@ -762,9 +762,7 @@ private fun MinistryTicketCard(
                 Image(
                     painter = painterResource(id = visual.imageRes),
                     contentDescription = null,
-                    modifier = Modifier
-                        .height(imageSize)
-                        .width(imageSize * 1.08f),
+                    modifier = Modifier.size(imageSize),
                     contentScale = ContentScale.Fit,
                 )
                 Text(
@@ -791,6 +789,24 @@ private fun MosaicCell(
             .clip(MinistryTicketShape)
             .background(color, MinistryTicketShape)
             .border(1.dp, ImperialBronze.copy(alpha = 0.46f), MinistryTicketShape),
+    ) {
+        BoxScopeWithContentColor(this, contentColor).content()
+    }
+}
+
+@Composable
+private fun PlainCell(
+    modifier: Modifier,
+    color: Color,
+    contentColor: Color,
+    content: @Composable BoxScopeWithContentColor.() -> Unit,
+) {
+    val shape = RoundedCornerShape(6.dp)
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(color, shape)
+            .border(1.dp, ImperialBronze.copy(alpha = 0.34f), shape),
     ) {
         BoxScopeWithContentColor(this, contentColor).content()
     }
