@@ -433,7 +433,7 @@ private fun TitleCell(
         ) {
             Text(
                 text = appTitle,
-                style = MaterialTheme.typography.displaySmall,
+                style = MaterialTheme.typography.displayLarge,
                 color = PalaceGold,
                 fontWeight = FontWeight.Normal,
                 maxLines = 1,

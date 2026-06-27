@@ -9,31 +9,33 @@ import androidx.compose.ui.unit.sp
 import com.lyihub.archiveassistant.R
 
 val ImperialDisplayFont = FontFamily(
-    Font(R.font.ma_shan_zheng_regular, FontWeight.Normal),
+    Font(R.font.dinglie_song_typeface, FontWeight.Normal),
 )
 
-val ImperialTextFont = ImperialDisplayFont
+val ImperialTextFont = FontFamily(
+    Font(R.font.ma_shan_zheng_regular, FontWeight.Normal),
+)
 
 val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = ImperialDisplayFont,
         fontWeight = FontWeight.Normal,
-        fontSize = 36.sp,
-        lineHeight = 44.sp,
+        fontSize = 42.sp,
+        lineHeight = 50.sp,
         letterSpacing = 0.sp
     ),
     displayMedium = TextStyle(
         fontFamily = ImperialDisplayFont,
         fontWeight = FontWeight.Normal,
-        fontSize = 31.sp,
-        lineHeight = 39.sp,
+        fontSize = 34.sp,
+        lineHeight = 42.sp,
         letterSpacing = 0.sp
     ),
     displaySmall = TextStyle(
         fontFamily = ImperialDisplayFont,
         fontWeight = FontWeight.Normal,
-        fontSize = 28.sp,
-        lineHeight = 36.sp,
+        fontSize = 30.sp,
+        lineHeight = 38.sp,
         letterSpacing = 0.sp
     ),
     headlineLarge = TextStyle(

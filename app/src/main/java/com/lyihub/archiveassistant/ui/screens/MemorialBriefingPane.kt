@@ -41,6 +41,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.lyihub.archiveassistant.R
@@ -58,11 +59,12 @@ import kotlin.random.Random
 
 private const val MemorialCoverAspect = 1f / 2f
 private const val MemorialWheelItemCount = 24
-private const val MemorialActiveSlotDegrees = 240f
+private const val MemorialActiveSlotDegrees = 225f
 private const val MemorialWheelDragDegreesPerPixel = -0.18f
 private const val MemorialWheelActiveScale = 1.58f
 private const val MemorialWheelFocusHalfRangeDegrees = 24f
 private const val MemorialWheelCoverSeed = 20260627
+private val MemorialInk = Color.Black
 
 @Composable
 fun MemorialBriefingPane(
@@ -268,19 +270,19 @@ private fun MemorialWheelInnerDisc(
                     contentDescription = null,
                     modifier = Modifier.size(iconSize),
                     alpha = 0.46f,
-                    colorFilter = ColorFilter.tint(ImperialUmber),
+                    colorFilter = ColorFilter.tint(MemorialInk),
                 )
                 Text(
                     text = "轻触阅读",
-                    style = if (expanded) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,
-                    color = ImperialUmber.copy(alpha = 0.62f),
+                    style = if (expanded) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleLarge,
+                    color = MemorialInk,
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
                 )
                 Text(
                     text = "上下拨动奏章轮",
-                    style = if (expanded) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall,
-                    color = ImperialUmber.copy(alpha = 0.48f),
+                    style = if (expanded) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyMedium,
+                    color = MemorialInk.copy(alpha = 0.78f),
                     textAlign = TextAlign.Center,
                 )
             }
@@ -361,7 +363,6 @@ private fun MemorialWheelCover(
             )
             MemorialCoverLabel(
                 active = active,
-                index = index,
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -371,7 +372,6 @@ private fun MemorialWheelCover(
 @Composable
 private fun MemorialCoverLabel(
     active: Boolean,
-    index: Int,
     modifier: Modifier = Modifier,
 ) {
     val labelWidth = if (active) 0.5f else 0.48f
@@ -382,7 +382,7 @@ private fun MemorialCoverLabel(
                 .align(Alignment.Center)
                 .width(maxWidth * labelWidth)
                 .aspectRatio(MemorialCoverAspect / labelHeight * labelWidth)
-                .background(ImperialIvory.copy(alpha = if (active) 0.88f else 0.78f), RoundedCornerShape(2.dp))
+                .background(ImperialIvory.copy(alpha = if (active) 0.96f else 0.9f), RoundedCornerShape(2.dp))
                 .border(1.dp, ImperialBronze.copy(alpha = if (active) 0.76f else 0.52f), RoundedCornerShape(2.dp))
                 .padding(if (active) 5.dp else 4.dp),
         ) {
@@ -433,22 +433,14 @@ private fun MemorialCoverLabel(
             Column(
                 modifier = Modifier.align(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(if (active) 2.dp else 1.dp),
             ) {
                 Text(
                     text = "奏\n章",
-                    style = if (active) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleSmall,
-                    color = ImperialUmber,
+                    style = if (active) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge,
+                    color = MemorialInk,
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
-                    lineHeight = if (active) MaterialTheme.typography.titleMedium.lineHeight else MaterialTheme.typography.titleSmall.lineHeight,
-                )
-                Text(
-                    text = if (active) "甲辰" else ((index % 9) + 1).toString(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = ImperialCinnabar.copy(alpha = if (active) 0.82f else 0.62f),
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
+                    lineHeight = if (active) 28.sp else 25.sp,
                 )
             }
         }
@@ -467,20 +459,20 @@ private fun BriefingCopy(
     ) {
         Text(
             text = "奏章",
-            style = if (expanded) MaterialTheme.typography.displayLarge else MaterialTheme.typography.displayMedium,
-            color = ImperialUmber,
+            style = if (expanded) MaterialTheme.typography.displayMedium else MaterialTheme.typography.displaySmall,
+            color = MemorialInk,
             fontWeight = FontWeight.Normal,
         )
         Text(
             text = "门下既审，呈于御前",
-            style = MaterialTheme.typography.titleMedium,
-            color = ImperialUmber.copy(alpha = 0.82f),
+            style = if (expanded) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge,
+            color = MemorialInk,
             fontWeight = FontWeight.Normal,
         )
         Text(
             text = "今日尚有 $pendingCount 封待批。轻触此页，展开奏章堆叠，准、驳、留中皆可一笔批下。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = ImperialUmber.copy(alpha = 0.72f),
+            style = if (expanded) MaterialTheme.typography.titleSmall else MaterialTheme.typography.bodyMedium,
+            color = MemorialInk.copy(alpha = 0.78f),
             modifier = Modifier.fillMaxWidth(if (expanded) 0.38f else 0.56f),
         )
     }

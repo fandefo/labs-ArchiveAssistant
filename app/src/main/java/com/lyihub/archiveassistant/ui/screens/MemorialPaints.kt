@@ -154,7 +154,7 @@ internal class MemorialPaints(
     val stampText = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         color = STAMP_PAPER
         textSize = sp(38f)
-        typeface = assets.heritageTypeface
+        typeface = assets.stampTypeface
         textAlign = Paint.Align.CENTER
     }
 

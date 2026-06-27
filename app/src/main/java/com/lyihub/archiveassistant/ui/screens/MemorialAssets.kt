@@ -73,6 +73,12 @@ internal class MemorialAssets(context: Context) {
         Typeface.create(Typeface.SERIF, Typeface.NORMAL)
     }
 
+    val stampTypeface: Typeface = runCatching {
+        Typeface.createFromAsset(context.assets, "fonts/ling_dong_qi_che_chun_tang.ttf")
+    }.getOrElse {
+        heritageTypeface
+    }
+
     private val stampLikeTexture: Bitmap? = BitmapFactory.decodeResource(
         resources,
         R.drawable.memorial_stamp_like,
