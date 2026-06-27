@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -155,7 +154,6 @@ fun DetailPane(
     onAddItemClick: () -> Unit,
     modifier: Modifier = Modifier,
     showBackButton: Boolean = true,
-    forceMasonry: Boolean = false,
 ) {
     PaneContainer(
         modifier = modifier
@@ -177,7 +175,6 @@ fun DetailPane(
             )
             PaperVeil(modifier = Modifier.matchParentSize())
             val expanded = maxWidth >= 520.dp
-            val useMasonry = forceMasonry || maxWidth >= 360.dp
             val horizontalPadding = if (expanded) 28.dp else 16.dp
             val maxContentWidth = if (expanded) 980.dp else 560.dp
 
@@ -213,29 +210,15 @@ fun DetailPane(
                         )
                     }
                 } else {
-                    if (useMasonry) {
-                        item {
-                            ArticleMasonryGrid(
-                                items = items,
-                                searchQuery = searchQuery,
-                                onItemClick = onItemClick,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .widthIn(max = maxContentWidth),
-                            )
-                        }
-                    } else {
-                        itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
-                            MemorialArticleCard(
-                                item = item,
-                                visual = articleVisual(index, hasArticleImage(item)),
-                                searchQuery = searchQuery,
-                                onClick = { onItemClick(item.id) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .widthIn(max = maxContentWidth),
-                            )
-                        }
+                    item {
+                        ArticleMasonryGrid(
+                            items = items,
+                            searchQuery = searchQuery,
+                            onItemClick = onItemClick,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .widthIn(max = maxContentWidth),
+                        )
                     }
                 }
             }

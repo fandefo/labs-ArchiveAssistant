@@ -709,7 +709,6 @@ private fun WideWorkspaceLayout(
                                 onItemClick = stateStore::openCardModal,
                                 onAddItemClick = stateStore::openAddItemDialog,
                                 showBackButton = false,
-                                forceMasonry = true,
                             )
                         } else {
                             MemorialBriefingPane(
