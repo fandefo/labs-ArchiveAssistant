@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -171,7 +172,7 @@ fun DetailPane(
         ) {
             val expanded = maxWidth >= 720.dp
             val horizontalPadding = if (expanded) 28.dp else 16.dp
-            val maxContentWidth = if (expanded) 880.dp else 560.dp
+            val maxContentWidth = if (expanded) 980.dp else 560.dp
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -181,7 +182,7 @@ fun DetailPane(
                     end = horizontalPadding,
                     bottom = 28.dp,
                 ),
-                verticalArrangement = Arrangement.spacedBy(if (expanded) 18.dp else 14.dp),
+                verticalArrangement = Arrangement.spacedBy(if (expanded) 16.dp else 14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 item {
@@ -204,21 +205,70 @@ fun DetailPane(
                         )
                     }
                 } else {
-                    items(items, key = { it.id }) { item ->
+                    if (expanded) {
+                        item {
+                            ArticleMasonryGrid(
+                                items = items,
+                                searchQuery = searchQuery,
+                                onItemClick = onItemClick,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .widthIn(max = maxContentWidth),
+                            )
+                        }
+                    } else {
+                        itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
+                            MemorialArticleCard(
+                                item = item,
+                                visual = articleVisual(index, hasArticleImage(item)),
+                                searchQuery = searchQuery,
+                                onClick = { onItemClick(item.id) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .widthIn(max = maxContentWidth),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArticleMasonryGrid(
+    items: List<KnowledgeItem>,
+    searchQuery: String,
+    onItemClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        repeat(2) { column ->
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items.forEachIndexed { index, item ->
+                    if (index % 2 == column) {
                         MemorialArticleCard(
                             item = item,
+                            visual = articleVisual(index, hasArticleImage(item)),
                             searchQuery = searchQuery,
-                            expanded = expanded,
                             onClick = { onItemClick(item.id) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .widthIn(max = maxContentWidth),
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
             }
         }
     }
+}
+
+private fun hasArticleImage(item: KnowledgeItem): Boolean {
+    return item.contentType == ContentType.IMAGE_SCREENSHOT || item.contentType == ContentType.WEB_ARTICLE
 }
 
 @Composable
@@ -367,138 +417,138 @@ private fun DetailFilterSeal(
 @Composable
 private fun MemorialArticleCard(
     item: KnowledgeItem,
+    visual: ArticleVisual,
     searchQuery: String,
-    expanded: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val showHighlight = searchQuery.isNotBlank()
-    Box(
+    Column(
         modifier = modifier
-            .background(DetailPaperDeep)
-            .border(1.dp, DetailPalaceGold.copy(alpha = 0.76f))
+            .background(DetailPaperDeep, RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp))
+            .border(1.dp, DetailPalaceGold.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
             .testTag("knowledge-card-${item.id}"),
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.memorial_xuan_paper),
-            contentDescription = null,
-            modifier = Modifier.matchParentSize(),
-            contentScale = ContentScale.Crop,
-            alpha = 0.74f,
-        )
-        PaperVeil(modifier = Modifier.matchParentSize())
-        DecorativeCorner(Modifier.align(Alignment.TopStart), 0f)
-        DecorativeCorner(Modifier.align(Alignment.TopEnd), 90f)
-        DecorativeCorner(Modifier.align(Alignment.BottomEnd), 180f)
-        DecorativeCorner(Modifier.align(Alignment.BottomStart), 270f)
-        Column(
+        visual.imageRes?.let { imageRes ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(ImperialIvory)
+                    .padding(10.dp),
+            ) {
+                Image(
+                    painter = painterResource(id = imageRes),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(visual.aspectRatio),
+                    contentScale = ContentScale.Fit,
+                )
+            }
+        }
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = if (expanded) 30.dp else 22.dp, vertical = if (expanded) 24.dp else 20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .background(DetailPaperDeep)
+                .padding(
+                    start = 16.dp,
+                    top = if (visual.imageRes == null) 18.dp else 10.dp,
+                    end = 16.dp,
+                    bottom = 16.dp,
+                ),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = "${item.contentType.label} · ${friendlyTime(item.createdAtEpochMillis)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = DetailCinnabar,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = "尚书收",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = DetailCinnabar.copy(alpha = 0.82f),
-                    fontWeight = FontWeight.Black,
-                )
-            }
-            Text(
-                text = if (showHighlight) {
-                    buildHighlightedText(
-                        text = item.title,
-                        query = searchQuery,
-                        highlightColor = DetailCinnabar,
-                        highlightBgColor = DetailCinnabar.copy(alpha = 0.16f),
-                    )
-                } else {
-                    androidx.compose.ui.text.AnnotatedString(item.title)
-                },
-                style = if (expanded) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge,
-                color = DetailInk,
-                fontWeight = FontWeight.Black,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+            Image(
+                painter = painterResource(id = R.drawable.memorial_xuan_paper),
+                contentDescription = null,
+                modifier = Modifier.matchParentSize(),
+                contentScale = ContentScale.Crop,
+                alpha = 0.68f,
             )
-            Text(
-                text = if (showHighlight) {
-                    buildHighlightedText(
-                        text = item.summary.ifBlank { item.fullText },
-                        query = searchQuery,
-                        highlightColor = DetailCinnabar,
-                        highlightBgColor = DetailCinnabar.copy(alpha = 0.16f),
-                    )
-                } else {
-                    androidx.compose.ui.text.AnnotatedString(item.summary.ifBlank { item.fullText })
-                },
-                style = MaterialTheme.typography.bodyLarge,
-                color = DetailInk.copy(alpha = 0.82f),
-                maxLines = if (expanded) 3 else 4,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (item.contentType == ContentType.IMAGE_SCREENSHOT && item.sourceUrl != null) {
-                val path = item.sourceUrl!!
-                var thumbBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
-                LaunchedEffect(path) {
-                    thumbBitmap = withContext(Dispatchers.IO) {
-                        try {
-                            BitmapFactory.decodeFile(path)?.asImageBitmap()
-                        } catch (_: Exception) {
-                            null
-                        }
-                    }
-                }
-                thumbBitmap?.let { bmp ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Image(
-                        bitmap = bmp,
-                        contentDescription = item.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(32f / 9f)
-                            .border(1.dp, DetailInk.copy(alpha = 0.24f)),
-                    )
-                }
-            }
-            Row(
+            PaperVeil(modifier = Modifier.matchParentSize())
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom,
+                verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
-                Text(
-                    text = item.fileName ?: item.sourceUrl?.take(36).orEmpty(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = DetailInk.copy(alpha = 0.56f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                Box(
-                    modifier = Modifier
-                        .size(width = 62.dp, height = 38.dp)
-                        .border(2.dp, DetailCinnabar.copy(alpha = 0.7f)),
-                    contentAlignment = Alignment.Center,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = "已藏",
-                        style = MaterialTheme.typography.titleSmall,
+                        text = "${item.contentType.label} · ${friendlyTime(item.createdAtEpochMillis)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = DetailCinnabar,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                    Text(
+                        text = "尚书收",
+                        style = MaterialTheme.typography.labelMedium,
                         color = DetailCinnabar.copy(alpha = 0.82f),
                         fontWeight = FontWeight.Black,
                     )
+                }
+                Text(
+                    text = if (showHighlight) {
+                        buildHighlightedText(
+                            text = item.title,
+                            query = searchQuery,
+                            highlightColor = DetailCinnabar,
+                            highlightBgColor = DetailCinnabar.copy(alpha = 0.16f),
+                        )
+                    } else {
+                        androidx.compose.ui.text.AnnotatedString(item.title)
+                    },
+                    style = MaterialTheme.typography.titleLarge,
+                    color = DetailInk,
+                    fontWeight = FontWeight.Black,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = if (showHighlight) {
+                        buildHighlightedText(
+                            text = item.summary.ifBlank { item.fullText },
+                            query = searchQuery,
+                            highlightColor = DetailCinnabar,
+                            highlightBgColor = DetailCinnabar.copy(alpha = 0.16f),
+                        )
+                    } else {
+                        androidx.compose.ui.text.AnnotatedString(item.summary.ifBlank { item.fullText })
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DetailInk.copy(alpha = 0.74f),
+                    maxLines = if (visual.imageRes == null) 6 else 4,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = item.fileName ?: item.sourceUrl?.take(28).orEmpty(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = DetailInk.copy(alpha = 0.5f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(width = 54.dp, height = 32.dp)
+                            .border(1.5.dp, DetailCinnabar.copy(alpha = 0.62f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "已藏",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = DetailCinnabar.copy(alpha = 0.82f),
+                            fontWeight = FontWeight.Black,
+                        )
+                    }
                 }
             }
         }

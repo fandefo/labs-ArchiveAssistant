@@ -11,11 +11,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -28,6 +31,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
@@ -59,6 +64,19 @@ private val PalaceInk = ImperialUmber
 private val PalacePaper = ImperialIvory
 private val PalaceGridLine = ImperialBronze
 
+private val MinistryTicketShape = GenericShape { size, _ ->
+    val cut = size.height * 0.16f
+    moveTo(cut, 0f)
+    lineTo(size.width - cut, 0f)
+    lineTo(size.width, cut)
+    lineTo(size.width, size.height - cut)
+    lineTo(size.width - cut, size.height)
+    lineTo(cut, size.height)
+    lineTo(0f, size.height - cut)
+    lineTo(0f, cut)
+    close()
+}
+
 private val DashboardFallbackTitles = listOf(
     "大模型架构研究",
     "UX/UI 灵感板",
@@ -74,7 +92,6 @@ private data class DashboardFolder(
     val itemCount: Int,
     val updatedAtEpochMillis: Long?,
     val topic: Topic?,
-    val isGoldCell: Boolean,
 )
 
 @Composable
@@ -203,17 +220,22 @@ private fun ColumnScope.ExpandedMosaic(
     onCreateTopic: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
+    HomeHeaderRow(
+        appTitle = appTitle,
+        totalItems = totalItems,
+        pendingCount = pendingCount,
+        isSmartSummarizing = isSmartSummarizing,
+        onOpenSettings = onOpenSettings,
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(0.9f),
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .weight(1.08f),
+            .weight(0.88f),
         horizontalArrangement = Arrangement.spacedBy(1.dp),
     ) {
-        TitleCell(
-            appTitle = appTitle,
-            onOpenSettings = onOpenSettings,
-            modifier = Modifier.weight(2f),
-        )
         PalaceActionCell(
             title = "宣拾遗",
             subtitle = "重新读取剪切板",
@@ -235,19 +257,6 @@ private fun ColumnScope.ExpandedMosaic(
             onClick = onSubmit,
             testTag = "classify-button",
         )
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .weight(1f),
-        horizontalArrangement = Arrangement.spacedBy(1.dp),
-    ) {
-        StatusCell(
-            totalItems = totalItems,
-            pendingCount = pendingCount,
-            isSmartSummarizing = isSmartSummarizing,
-            modifier = Modifier.weight(2f),
-        )
         SearchCell(
             searchQuery = searchQuery,
             onSearchQueryChanged = onSearchQueryChanged,
@@ -255,50 +264,36 @@ private fun ColumnScope.ExpandedMosaic(
             validationMessage = validationMessage,
             smartSummarizationMessage = smartSummarizationMessage,
             onInputChanged = onInputChanged,
-            modifier = Modifier.weight(2f),
+            modifier = Modifier.weight(1.25f),
         )
     }
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .weight(0.9f),
+            .weight(0.84f),
         horizontalArrangement = Arrangement.spacedBy(1.dp),
     ) {
         MemorialCell(
             pendingCount = pendingCount,
             onClick = onOpenMemorialDemo,
-            modifier = Modifier.weight(2f),
+            modifier = Modifier.weight(1.2f),
         )
-        WorkflowRow(modifier = Modifier.weight(2f))
+        WorkflowRow(modifier = Modifier.weight(1.8f))
     }
-    FolderHeaderRow(
+    MinistryHeaderRow(
         onCreateTopic = onCreateTopic,
         onOpenManage = onOpenManage,
     )
-    folders.chunked(3).forEach { row ->
-        Row(
+    folders.forEachIndexed { index, folder ->
+        MinistryTicketCard(
+            folder = folder,
+            visual = ministryVisual(index),
+            onTopicSelected = onTopicSelected,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.96f),
-            horizontalArrangement = Arrangement.spacedBy(1.dp),
-        ) {
-            row.forEach { folder ->
-                FolderCell(
-                    folder = folder,
-                    onTopicSelected = onTopicSelected,
-                    modifier = Modifier.weight(1f),
-                    compact = false,
-                )
-            }
-            repeat(3 - row.size) {
-                Spacer(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxSize()
-                        .background(PalaceGreen),
-                )
-            }
-        }
+                .weight(0.74f),
+            compact = false,
+        )
     }
 }
 
@@ -323,17 +318,20 @@ private fun ColumnScope.CompactMosaic(
     onCreateTopic: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
-    TitleCell(
+    HomeHeaderRow(
         appTitle = appTitle,
+        totalItems = totalItems,
+        pendingCount = pendingCount,
+        isSmartSummarizing = isSmartSummarizing,
         onOpenSettings = onOpenSettings,
         modifier = Modifier
             .fillMaxWidth()
-            .weight(1.25f),
+            .weight(1.02f),
     )
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .weight(1f),
+            .weight(0.82f),
         horizontalArrangement = Arrangement.spacedBy(1.dp),
     ) {
         PalaceActionCell(
@@ -367,52 +365,57 @@ private fun ColumnScope.CompactMosaic(
         onInputChanged = onInputChanged,
         modifier = Modifier
             .fillMaxWidth()
-            .weight(0.86f),
+            .weight(0.8f),
     )
     MemorialCell(
         pendingCount = pendingCount,
         onClick = onOpenMemorialDemo,
         modifier = Modifier
             .fillMaxWidth()
-            .weight(0.86f),
+            .weight(0.78f),
     )
-    StatusCell(
-        totalItems = totalItems,
-        pendingCount = pendingCount,
-        isSmartSummarizing = isSmartSummarizing,
-        modifier = Modifier
-            .fillMaxWidth()
-            .weight(0.9f),
-    )
-    WorkflowRow(modifier = Modifier.weight(0.72f))
-    FolderHeaderRow(
+    WorkflowRow(modifier = Modifier.weight(0.58f))
+    MinistryHeaderRow(
         onCreateTopic = onCreateTopic,
         onOpenManage = onOpenManage,
     )
-    folders.chunked(2).forEach { row ->
-        Row(
+    folders.forEachIndexed { index, folder ->
+        MinistryTicketCard(
+            folder = folder,
+            visual = ministryVisual(index),
+            onTopicSelected = onTopicSelected,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.92f),
-            horizontalArrangement = Arrangement.spacedBy(1.dp),
-        ) {
-            row.forEach { folder ->
-                FolderCell(
-                    folder = folder,
-                    onTopicSelected = onTopicSelected,
-                    modifier = Modifier.weight(1f),
-                    compact = true,
-                )
-            }
-            if (row.size == 1) {
-                Spacer(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxSize()
-                        .background(PalaceGreen),
-                )
-            }
-        }
+                .weight(0.66f),
+            compact = true,
+        )
+    }
+}
+
+@Composable
+private fun HomeHeaderRow(
+    appTitle: String,
+    totalItems: Int,
+    pendingCount: Int,
+    isSmartSummarizing: Boolean,
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(1.dp),
+    ) {
+        TitleCell(
+            appTitle = appTitle,
+            onOpenSettings = onOpenSettings,
+            modifier = Modifier.weight(1.5f),
+        )
+        StatusCell(
+            totalItems = totalItems,
+            pendingCount = pendingCount,
+            isSmartSummarizing = isSmartSummarizing,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -725,7 +728,7 @@ private fun WorkflowRow(modifier: Modifier = Modifier) {
     ) {
         WorkflowCell("中书", "拾取、摘要、拟题", Modifier.weight(1f))
         WorkflowCell("门下", "筛选、递奏、待批", Modifier.weight(1f))
-        WorkflowCell("尚书", "六档归藏", Modifier.weight(1f))
+        WorkflowCell("尚书", "六部归藏", Modifier.weight(1f))
     }
 }
 
@@ -760,7 +763,7 @@ private fun WorkflowCell(title: String, subtitle: String, modifier: Modifier = M
 }
 
 @Composable
-private fun FolderHeaderRow(
+private fun MinistryHeaderRow(
     onCreateTopic: () -> Unit,
     onOpenManage: () -> Unit,
 ) {
@@ -783,13 +786,13 @@ private fun FolderHeaderRow(
                     .padding(horizontal = 14.dp),
             ) {
                 Text(
-                    text = "尚书档案",
+                    text = "尚书六部",
                     style = MaterialTheme.typography.titleLarge,
                     color = PalaceGold,
                     fontWeight = FontWeight.Black,
                 )
                 Text(
-                    text = "六个固定文件夹",
+                    text = "六个固定文件夹 · 点击右侧即阅",
                     style = MaterialTheme.typography.bodySmall,
                     color = ImperialUmber.copy(alpha = 0.62f),
                 )
@@ -807,6 +810,129 @@ private fun FolderHeaderRow(
             testTag = "manage-button",
             modifier = Modifier.weight(1f),
         )
+    }
+}
+
+@Composable
+private fun MinistryTicketCard(
+    folder: DashboardFolder,
+    visual: MinistryVisual,
+    onTopicSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    compact: Boolean,
+) {
+    val enabled = folder.topic != null
+    val bodyColor = visual.background
+    val imageSize = if (compact) 78.dp else 104.dp
+    val titleStyle = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge
+    val summaryStyle = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
+    Box(
+        modifier = modifier
+            .padding(vertical = 3.dp)
+            .clip(MinistryTicketShape)
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        bodyColor,
+                        bodyColor.copy(alpha = 0.94f),
+                        ImperialIvory.copy(alpha = 0.92f),
+                    ),
+                ),
+                MinistryTicketShape,
+            )
+            .border(1.dp, ImperialBronze.copy(alpha = 0.62f), MinistryTicketShape)
+            .clickable(enabled = enabled) { folder.topic?.let { onTopicSelected(it.id) } }
+            .testTag("topic-card-${folder.id}"),
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.memorial_xuan_paper),
+            contentDescription = null,
+            modifier = Modifier.matchParentSize(),
+            contentScale = ContentScale.Crop,
+            alpha = 0.22f,
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .fillMaxSize()
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            visual.accent.copy(alpha = 0.08f),
+                            visual.accent.copy(alpha = 0.16f),
+                        ),
+                    ),
+                ),
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 16.dp, top = 10.dp, end = 12.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 5.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = visual.title,
+                        style = titleStyle,
+                        color = PalaceInk,
+                        fontWeight = FontWeight.Black,
+                        maxLines = 1,
+                    )
+                    Text(
+                        text = visual.duty,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = visual.accent,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Text(
+                    text = folder.title,
+                    style = summaryStyle,
+                    color = PalaceInk.copy(alpha = 0.84f),
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = visual.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = PalaceInk.copy(alpha = 0.62f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Image(
+                    painter = painterResource(id = visual.imageRes),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .height(imageSize)
+                        .width(imageSize * 1.08f),
+                    contentScale = ContentScale.Fit,
+                )
+                Text(
+                    text = folder.updatedAtEpochMillis?.let { "${folder.itemCount} 篇 · ${friendlyTime(it)}" }
+                        ?: "${folder.itemCount} 篇 · 待启用",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = visual.accent.copy(alpha = 0.84f),
+                    maxLines = 1,
+                )
+            }
+        }
     }
 }
 
@@ -832,57 +958,6 @@ private fun HeaderActionCell(
             fontWeight = FontWeight.Black,
             modifier = Modifier.align(Alignment.Center),
         )
-    }
-}
-
-@Composable
-private fun FolderCell(
-    folder: DashboardFolder,
-    onTopicSelected: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    compact: Boolean,
-) {
-    val cellColor = if (folder.isGoldCell) PalaceGoldBlock else PalaceGreen
-    val textColor = if (folder.isGoldCell) PalaceGreenDark else PalacePaper
-    val accentColor = if (folder.isGoldCell) PalaceGreenDark else PalaceGold
-    MosaicCell(
-        modifier = modifier
-            .fillMaxSize()
-            .clickable(enabled = folder.topic != null) { folder.topic?.let { onTopicSelected(it.id) } }
-            .testTag("topic-card-${folder.id}"),
-        color = cellColor,
-        contentColor = textColor,
-    ) {
-        DecorativePlaceholder(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(10.dp)
-                .size(if (compact) 48.dp else 56.dp),
-            alpha = if (folder.isGoldCell) 0.22f else 0.36f,
-            tint = if (folder.isGoldCell) PalaceGreenDark else PalaceGold,
-        )
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = folder.title,
-                style = MaterialTheme.typography.titleMedium,
-                color = textColor,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                fontWeight = FontWeight.Black,
-            )
-            Text(
-                text = folder.updatedAtEpochMillis?.let { "${friendlyTime(it)} · ${folder.itemCount} 项" }
-                    ?: "待启用 · 0 项",
-                style = MaterialTheme.typography.bodySmall,
-                color = accentColor.copy(alpha = 0.82f),
-                maxLines = 1,
-            )
-        }
     }
 }
 
@@ -970,7 +1045,6 @@ private fun dashboardFolders(
             itemCount = topic?.let { itemsByTopic[it.id]?.size ?: 0 } ?: 0,
             updatedAtEpochMillis = topic?.updatedAtEpochMillis,
             topic = topic,
-            isGoldCell = index == 1 || index == 4,
         )
     }
 }

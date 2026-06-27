@@ -1,6 +1,5 @@
 package com.lyihub.archiveassistant.ui.screens
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,31 +8,29 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.lyihub.archiveassistant.R
 import com.lyihub.archiveassistant.ui.theme.ImperialBronze
@@ -46,27 +43,14 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 
+private const val MemorialCoverAspect = 514f / 725f
+
 @Composable
 fun MemorialBriefingPane(
     pendingCount: Int,
     onOpenMemorialDemo: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val coverPainters = listOf(
-        painterResource(R.drawable.memorial_cover_pattern),
-        painterResource(R.drawable.memorial_cover_02),
-        painterResource(R.drawable.memorial_cover_03),
-        painterResource(R.drawable.memorial_cover_04),
-        painterResource(R.drawable.memorial_cover_05),
-        painterResource(R.drawable.memorial_cover_06),
-        painterResource(R.drawable.memorial_cover_07),
-        painterResource(R.drawable.memorial_cover_08),
-        painterResource(R.drawable.memorial_cover_09),
-        painterResource(R.drawable.memorial_cover_10),
-        painterResource(R.drawable.memorial_cover_11),
-        painterResource(R.drawable.memorial_cover_12),
-    )
-
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
@@ -97,7 +81,7 @@ fun MemorialBriefingPane(
                 ),
         )
         MemorialCoverWheel(
-            coverPainters = coverPainters,
+            coverResources = MemorialCoverResources,
             modifier = Modifier.fillMaxSize(),
         )
         BriefingCopy(
@@ -117,127 +101,84 @@ fun MemorialBriefingPane(
 
 @Composable
 private fun MemorialCoverWheel(
-    coverPainters: List<Painter>,
+    coverResources: List<Int>,
     modifier: Modifier = Modifier,
 ) {
-    Canvas(modifier = modifier) {
-        val panelMin = min(size.width, size.height)
-        val outerRadius = panelMin * 0.92f
-        val innerRadius = outerRadius * 0.57f
-        val segmentSweep = 13.6f
-        val segmentGap = 1.35f
-        val startAngle = 122f
-        val center = Offset(size.width * 0.86f, size.height * 0.92f)
+    BoxWithConstraints(modifier = modifier) {
+        val expanded = maxWidth >= 620.dp
+        val panelMin = min(maxWidth.value, maxHeight.value).dp
+        val radius = panelMin * if (expanded) 1.26f else 1.18f
+        val centerX = maxWidth * if (expanded) 1.22f else 1.16f
+        val centerY = maxHeight * if (expanded) 1.06f else 1.02f
+        val cardWidth = if (expanded) 110.dp else 84.dp
+        val startDegrees = if (expanded) 205f else 210f
+        val stepDegrees = if (expanded) 10.6f else 12.2f
 
-        drawCircle(
-            color = ImperialLightGold.copy(alpha = 0.34f),
-            radius = outerRadius,
-            center = center,
-        )
-        drawCircle(
-            color = ImperialIvory.copy(alpha = 0.94f),
-            radius = innerRadius,
-            center = center,
-        )
-
-        repeat(22) { index ->
-            val angle = startAngle + index * (segmentSweep + segmentGap)
-            val painter = coverPainters[index % coverPainters.size]
-            drawRingSegment(
-                painter = painter,
-                center = center,
-                innerRadius = innerRadius,
-                outerRadius = outerRadius,
-                startDegrees = angle,
-                sweepDegrees = segmentSweep,
-                index = index,
+        repeat(18) { index ->
+            val degrees = startDegrees + index * stepDegrees
+            MemorialWheelCover(
+                resId = coverResources[index % coverResources.size],
+                degrees = degrees,
+                centerX = centerX,
+                centerY = centerY,
+                radius = radius,
+                width = cardWidth,
+                modifier = Modifier.fillMaxSize(),
             )
         }
-
-        drawCircle(
-            color = ImperialBronze.copy(alpha = 0.16f),
-            radius = innerRadius,
-            center = center,
-        )
-        drawCircle(
-            color = ImperialCinnabar.copy(alpha = 0.22f),
-            radius = innerRadius * 0.78f,
-            center = center,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.2.dp.toPx()),
-        )
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawRingSegment(
-    painter: Painter,
-    center: Offset,
-    innerRadius: Float,
-    outerRadius: Float,
-    startDegrees: Float,
-    sweepDegrees: Float,
-    index: Int,
+@Composable
+private fun MemorialWheelCover(
+    resId: Int,
+    degrees: Float,
+    centerX: Dp,
+    centerY: Dp,
+    radius: Dp,
+    width: Dp,
+    modifier: Modifier = Modifier,
 ) {
-    val segmentPath = ringSegmentPath(center, innerRadius, outerRadius, startDegrees, sweepDegrees)
-    val midDegrees = startDegrees + sweepDegrees / 2f
-    val midRadians = Math.toRadians(midDegrees.toDouble())
-    val segmentCenter = Offset(
-        x = center.x + cos(midRadians).toFloat() * ((innerRadius + outerRadius) / 2f),
-        y = center.y + sin(midRadians).toFloat() * ((innerRadius + outerRadius) / 2f),
-    )
-    val segmentWidth = (outerRadius - innerRadius) * 0.88f
-    val segmentHeight = outerRadius * 0.26f
-
-    clipPath(segmentPath) {
-        drawPath(
-            path = segmentPath,
-            color = if (index % 3 == 0) ImperialParchment else ImperialLightGold,
-        )
-        rotate(degrees = midDegrees + 90f, pivot = segmentCenter) {
-            translate(
-                left = segmentCenter.x - segmentWidth / 2f,
-                top = segmentCenter.y - segmentHeight / 2f,
-            ) {
-                with(painter) {
-                    draw(
-                        size = Size(segmentWidth, segmentHeight),
-                        alpha = 0.88f,
-                    )
-                }
-            }
+    val radians = Math.toRadians(degrees.toDouble())
+    val height = width / MemorialCoverAspect
+    val x = centerX + radius * cos(radians).toFloat() - width / 2f
+    val y = centerY + radius * sin(radians).toFloat() - height / 2f
+    Box(
+        modifier = modifier,
+    ) {
+        Box(
+            modifier = Modifier
+                .offset(x = x, y = y)
+                .width(width)
+                .aspectRatio(MemorialCoverAspect)
+                .graphicsLayer(rotationZ = degrees + 90f)
+                .background(ImperialParchment, RoundedCornerShape(3.dp))
+                .border(1.dp, ImperialBronze.copy(alpha = 0.58f), RoundedCornerShape(3.dp)),
+        ) {
+            Image(
+                painter = painterResource(id = resId),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.05f),
+                                ImperialUmber.copy(alpha = 0.12f),
+                            ),
+                        ),
+                    ),
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .border(4.dp, ImperialIvory.copy(alpha = 0.18f), RoundedCornerShape(3.dp)),
+            )
         }
-        drawPath(
-            path = segmentPath,
-            color = ImperialIvory.copy(alpha = if (index % 2 == 0) 0.12f else 0.24f),
-        )
-    }
-    drawPath(
-        path = segmentPath,
-        color = ImperialIvory.copy(alpha = 0.86f),
-        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.1.dp.toPx()),
-    )
-}
-
-private fun ringSegmentPath(
-    center: Offset,
-    innerRadius: Float,
-    outerRadius: Float,
-    startDegrees: Float,
-    sweepDegrees: Float,
-): Path {
-    return Path().apply {
-        arcTo(
-            rect = Rect(center - Offset(outerRadius, outerRadius), Size(outerRadius * 2f, outerRadius * 2f)),
-            startAngleDegrees = startDegrees,
-            sweepAngleDegrees = sweepDegrees,
-            forceMoveTo = true,
-        )
-        arcTo(
-            rect = Rect(center - Offset(innerRadius, innerRadius), Size(innerRadius * 2f, innerRadius * 2f)),
-            startAngleDegrees = startDegrees + sweepDegrees,
-            sweepAngleDegrees = -sweepDegrees,
-            forceMoveTo = false,
-        )
-        close()
     }
 }
 
