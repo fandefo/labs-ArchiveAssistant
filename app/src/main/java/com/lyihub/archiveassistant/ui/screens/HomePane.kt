@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.annotation.DrawableRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -448,6 +449,7 @@ private fun TitleCell(
         contentColor = PalaceGold,
     ) {
         DecorativePlaceholder(
+            imageRes = R.drawable.imperial_ornament_gate_guard,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(end = 18.dp)
@@ -504,6 +506,7 @@ private fun StatusCell(
         contentColor = PalaceGold,
     ) {
         DecorativePlaceholder(
+            imageRes = R.drawable.imperial_ornament_bronze,
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(14.dp)
@@ -581,6 +584,11 @@ private fun PalaceActionCell(
         contentColor = contentColor,
     ) {
         DecorativePlaceholder(
+            imageRes = if (label == "中书") {
+                R.drawable.imperial_ornament_lantern
+            } else {
+                R.drawable.imperial_ornament_ruyi
+            },
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(12.dp)
@@ -708,6 +716,7 @@ private fun MemorialCell(
         contentColor = PalaceGreenDark,
     ) {
         DecorativePlaceholder(
+            imageRes = R.drawable.imperial_ornament_gourd,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(end = 14.dp)
@@ -1029,12 +1038,13 @@ private fun HiddenParserInput(
 
 @Composable
 private fun DecorativePlaceholder(
+    @DrawableRes imageRes: Int,
     modifier: Modifier = Modifier,
     alpha: Float = 1f,
     tint: Color? = null,
 ) {
     Image(
-        painter = painterResource(id = R.drawable.dashboard_placeholder),
+        painter = painterResource(id = imageRes),
         contentDescription = null,
         modifier = modifier,
         contentScale = ContentScale.Crop,

@@ -637,7 +637,7 @@ private fun DecorativeDetailImage(
     tint: Color,
 ) {
     Image(
-        painter = painterResource(id = R.drawable.dashboard_placeholder),
+        painter = painterResource(id = R.drawable.imperial_ornament_pattern),
         contentDescription = null,
         modifier = modifier,
         contentScale = ContentScale.Crop,
