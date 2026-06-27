@@ -13,7 +13,7 @@ class MockKnowledgeClassifierTest {
 
         val payload = result.assertClassified()
         assertEquals(ContentType.WEB_ARTICLE, payload.contentType)
-        assertEquals(SampleKnowledgeData.DefaultTopicId, payload.topicId)
+        assertEquals("officials", payload.topicId)
     }
 
     @Test
@@ -22,7 +22,7 @@ class MockKnowledgeClassifierTest {
 
         val payload = result.assertClassified()
         assertEquals(ContentType.IMAGE_SCREENSHOT, payload.contentType)
-        assertEquals("topic-ui-inspiration", payload.topicId)
+        assertEquals("works", payload.topicId)
     }
 
     @Test
@@ -32,7 +32,7 @@ class MockKnowledgeClassifierTest {
         val payload = result.assertClassified()
         assertEquals(ContentType.DOCUMENT, payload.contentType)
         assertEquals(DocumentFormat.PDF, payload.documentFormat)
-        assertEquals(SampleKnowledgeData.DefaultTopicId, payload.topicId)
+        assertEquals("officials", payload.topicId)
     }
 
     @Test
@@ -77,7 +77,25 @@ class MockKnowledgeClassifierTest {
 
         val payload = result.assertClassified()
         assertEquals(ContentType.WEB_ARTICLE, payload.contentType)
-        assertEquals("topic-anthropology-clips", payload.topicId)
+        assertEquals("rites", payload.topicId)
+    }
+
+    @Test
+    fun classify_withLegacyTopicList_fallsBackToTreasuryId() {
+        val legacyTopics = listOf(
+            Topic(
+                id = "topic-legacy",
+                title = SixMinistry.WORKS.label,
+                iconName = "folder",
+                iconColor = "#111111",
+                updatedAtEpochMillis = 1L,
+            ),
+        )
+
+        val result = classifier.classify("UX screenshot image of a settings panel", legacyTopics)
+
+        val payload = result.assertClassified()
+        assertEquals(SixMinistry.TREASURY.id, payload.topicId)
     }
 
     @Test
@@ -89,20 +107,38 @@ class MockKnowledgeClassifierTest {
     }
 
     @Test
-    fun sampleData_containsPrototypeLabelsAndDeterministicFixtures() {
+    fun sampleData_containsSixMinistryTopicsAndDeterministicFixtures() {
         assertEquals(
             listOf("全部", "网页", "图像", "文档"),
             ContentType.entries.map { it.label },
         )
         assertEquals(
-            listOf("大模型架构研究", "UX/UI 灵感板", "阅读剪报：人类学", "冷门旅行地参考", "开源工具收藏"),
+            listOf("吏 · 名籍", "户 · 府库", "礼 · 典章", "兵 · 行令", "刑 · 稽核", "工 · 营造"),
             SampleKnowledgeData.topics.map { it.title },
+        )
+        assertEquals(
+            listOf("officials", "treasury", "rites", "military", "justice", "works"),
+            SampleKnowledgeData.topics.map { it.id },
         )
         assertTrue(SampleKnowledgeData.items.any { it.contentType == ContentType.WEB_ARTICLE })
         assertTrue(SampleKnowledgeData.items.any { it.contentType == ContentType.IMAGE_SCREENSHOT })
         assertTrue(SampleKnowledgeData.items.any { it.contentType == ContentType.DOCUMENT })
         assertTrue(SampleKnowledgeData.topics.all { it.id.isNotBlank() && it.updatedAtEpochMillis > 0L })
         assertTrue(SampleKnowledgeData.items.all { it.id.isNotBlank() && it.createdAtEpochMillis > 0L })
+    }
+
+    @Test
+    fun classify_allSampleOutputsAreSixMinistryIds() {
+        val validIds = SixMinistry.entries.map { it.id }.toSet()
+
+        val payloads = listOf(
+            classifier.classify("https://example.com/article"),
+            classifier.classify("UX screenshot image"),
+            classifier.classify("田野仪式记录"),
+            classifier.classify("travel itinerary"),
+        ).map { it.assertClassified() }
+
+        assertTrue(payloads.all { it.topicId in validIds })
     }
 
     private fun ClassificationResult.assertClassified(): ClassificationPayload {

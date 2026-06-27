@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -52,8 +50,6 @@ fun HomePane(
     onSubmitParserInput: () -> Unit,
     onTopicSelected: (String) -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenManage: () -> Unit,
-    onCreateTopic: () -> Unit,
     onSearchQueryChanged: (String) -> Unit,
     onOpenClipboard: () -> Unit,
     isSmartSummarizing: Boolean = false,
@@ -128,33 +124,17 @@ fun HomePane(
             item {
                 Column(modifier = Modifier.testTag("recent-topic-list")) {
                     PaneDivider()
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            text = "最近主题",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TextActionButton(
-                                label = "新建",
-                                onClick = onCreateTopic,
-                                testTag = "home-create-topic-button",
-                                icon = Icons.Default.Add,
-                            )
-                            TextActionButton(
-                                label = "管理",
-                                onClick = onOpenManage,
-                                testTag = "manage-button",
-                                icon = Icons.AutoMirrored.Filled.List,
-                            )
-                        }
-                    }
+                    Text(
+                        text = "最近主题",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(
+                            start = 20.dp,
+                            end = 20.dp,
+                            top = 8.dp,
+                            bottom = 4.dp,
+                        ),
+                    )
                     recentTopics.forEach { topic ->
                         TopicCard(
                             topic = topic,

@@ -11,28 +11,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,7 +31,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.lyihub.archiveassistant.domain.KnowledgeItem
 import com.lyihub.archiveassistant.domain.Topic
-import com.lyihub.archiveassistant.state.TopicNameDialogMode
 import com.lyihub.archiveassistant.ui.components.PaneContainer
 import com.lyihub.archiveassistant.ui.components.PaneDivider
 import com.lyihub.archiveassistant.ui.components.PaneHeader
@@ -53,22 +41,8 @@ fun ManagePane(
     itemsByTopic: Map<String, List<KnowledgeItem>>,
     onBack: () -> Unit,
     onTopicSelected: (String) -> Unit,
-    onCreateTopic: () -> Unit,
-    onRenameTopic: (String) -> Unit,
-    onDeleteTopic: (String) -> Unit,
-    onConfirmCreateTopic: (String) -> Unit,
-    onConfirmRenameTopic: (String) -> Unit,
-    onConfirmDeleteTopic: () -> Unit,
-    onCloseTopicNameDialog: () -> Unit,
-    onCloseDeleteConfirmDialog: () -> Unit,
-    topicNameDialogMode: TopicNameDialogMode?,
-    topicNameDialogTopicId: String?,
-    topicValidationMessage: String?,
-    deleteConfirmTopicId: String?,
     modifier: Modifier = Modifier,
 ) {
-    val renamingTopic = topics.firstOrNull { it.id == topicNameDialogTopicId }
-
     PaneContainer(modifier = modifier.testTag("manage-pane")) {
         PaneHeader(
             title = "全部主题",
@@ -80,18 +54,6 @@ fun ManagePane(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "返回",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            },
-            actions = {
-                IconButton(
-                    onClick = onCreateTopic,
-                    modifier = Modifier.testTag("create-topic-button"),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "新建主题",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -120,35 +82,9 @@ fun ManagePane(
                     topic = topic,
                     itemCount = itemsByTopic[topic.id]?.size ?: 0,
                     onClick = { onTopicSelected(topic.id) },
-                    onRename = { onRenameTopic(topic.id) },
-                    onDelete = { onDeleteTopic(topic.id) },
                 )
             }
         }
-    }
-
-    if (topicNameDialogMode != null) {
-        TopicNameDialog(
-            mode = topicNameDialogMode,
-            initialName = renamingTopic?.title ?: "",
-            validationMessage = topicValidationMessage,
-            onConfirm = { name ->
-                when (topicNameDialogMode) {
-                    TopicNameDialogMode.CREATE -> onConfirmCreateTopic(name)
-                    TopicNameDialogMode.RENAME -> onConfirmRenameTopic(name)
-                }
-            },
-            onDismiss = onCloseTopicNameDialog,
-        )
-    }
-
-    if (deleteConfirmTopicId != null) {
-        val deletingTopic = topics.firstOrNull { it.id == deleteConfirmTopicId }
-        DeleteConfirmDialog(
-            topicTitle = deletingTopic?.title ?: "",
-            onConfirm = onConfirmDeleteTopic,
-            onDismiss = onCloseDeleteConfirmDialog,
-        )
     }
 }
 
@@ -157,8 +93,6 @@ private fun ManageTopicRow(
     topic: Topic,
     itemCount: Int,
     onClick: () -> Unit,
-    onRename: () -> Unit,
-    onDelete: () -> Unit,
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -187,26 +121,6 @@ private fun ManageTopicRow(
                     text = "${friendlyTime(topic.updatedAtEpochMillis)} · ${itemCount} 项内容",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            IconButton(
-                onClick = onRename,
-                modifier = Modifier.testTag("rename-topic-button-${topic.id}"),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "重命名",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.testTag("delete-topic-button-${topic.id}"),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "删除",
-                    tint = MaterialTheme.colorScheme.error,
                 )
             }
         }
@@ -239,94 +153,3 @@ private fun TopicIcon(
     }
 }
 
-@Composable
-private fun TopicNameDialog(
-    mode: TopicNameDialogMode,
-    initialName: String,
-    validationMessage: String?,
-    onConfirm: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var text by remember { mutableStateOf(initialName) }
-    val title = when (mode) {
-        TopicNameDialogMode.CREATE -> "建立新主题"
-        TopicNameDialogMode.RENAME -> "重命名主题"
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    label = { Text("主题名称") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Text(
-                    text = "${text.length} / 20",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (validationMessage != null) {
-                    Text(
-                        text = validationMessage,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirm(text) },
-                modifier = Modifier.testTag("topic-name-dialog-confirm"),
-            ) {
-                Text("确定")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier.testTag("topic-name-dialog-dismiss"),
-            ) {
-                Text("取消")
-            }
-        },
-        modifier = Modifier.testTag("topic-name-dialog"),
-    )
-}
-
-@Composable
-private fun DeleteConfirmDialog(
-    topicTitle: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("确认删除") },
-        text = {
-            Text("确定要删除主题 \"$topicTitle\" 吗？该主题下的所有内容也将被删除。")
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onConfirm,
-                modifier = Modifier.testTag("delete-confirm-dialog-confirm"),
-            ) {
-                Text("删除", color = MaterialTheme.colorScheme.error)
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                modifier = Modifier.testTag("delete-confirm-dialog-dismiss"),
-            ) {
-                Text("取消")
-            }
-        },
-        modifier = Modifier.testTag("delete-confirm-dialog"),
-    )
-}

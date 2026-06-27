@@ -4,7 +4,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -34,8 +33,6 @@ class HomePaneTest {
                     onSubmitParserInput = {},
                     onTopicSelected = {},
                     onOpenSettings = {},
-                    onOpenManage = {},
-                    onCreateTopic = {},
                     searchQuery = "",
                     onSearchQueryChanged = {},
                     onOpenClipboard = {},
@@ -47,8 +44,9 @@ class HomePaneTest {
         composeTestRule.onNodeWithTag("clipboard-button").assertIsDisplayed()
         composeTestRule.onNodeWithTag("classify-button").assertIsDisplayed()
         composeTestRule.onNodeWithTag("recent-topic-list").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("manage-button").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("home-create-topic-button").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("manage-button").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("home-create-topic-button").assertDoesNotExist()
+        composeTestRule.onNodeWithTag("create-topic-button").assertDoesNotExist()
     }
 
     @Test
@@ -68,8 +66,6 @@ class HomePaneTest {
                     onSubmitParserInput = { submitCalled = true },
                     onTopicSelected = {},
                     onOpenSettings = {},
-                    onOpenManage = {},
-                    onCreateTopic = {},
                     searchQuery = "",
                     onSearchQueryChanged = {},
                     onOpenClipboard = {},
@@ -100,8 +96,6 @@ class HomePaneTest {
                     onSubmitParserInput = {},
                     onTopicSelected = {},
                     onOpenSettings = {},
-                    onOpenManage = {},
-                    onCreateTopic = {},
                     searchQuery = "",
                     onSearchQueryChanged = {},
                     onOpenClipboard = { clipboardCalled = true },
@@ -127,8 +121,6 @@ class HomePaneTest {
                     onSubmitParserInput = {},
                     onTopicSelected = {},
                     onOpenSettings = {},
-                    onOpenManage = {},
-                    onCreateTopic = {},
                     searchQuery = "",
                     onSearchQueryChanged = {},
                     onOpenClipboard = {},
@@ -157,8 +149,6 @@ class HomePaneTest {
                     onSubmitParserInput = {},
                     onTopicSelected = {},
                     onOpenSettings = {},
-                    onOpenManage = {},
-                    onCreateTopic = {},
                     searchQuery = "",
                     onSearchQueryChanged = {},
                     onOpenClipboard = {},
@@ -169,36 +159,6 @@ class HomePaneTest {
         recent.forEach { topic ->
             composeTestRule.onNodeWithTag("topic-card-${topic.id}").assertIsDisplayed()
         }
-    }
-
-    @Test
-    fun homePane_createTopicButton_click_triggersCallback() {
-        var createTopicCalled = false
-
-        composeTestRule.setContent {
-            ArchiveAssistantTheme {
-                HomePane(
-                    title = "聚合拾遗",
-                    parserInput = "",
-                    parserValidationMessage = null,
-                    recentTopics = emptyList(),
-                    itemsByTopic = emptyMap(),
-                    onParserInputChanged = {},
-                    onSubmitParserInput = {},
-                    onTopicSelected = {},
-                    onOpenSettings = {},
-                    onOpenManage = {},
-                    onCreateTopic = { createTopicCalled = true },
-                    searchQuery = "",
-                    onSearchQueryChanged = {},
-                    onOpenClipboard = {},
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithTag("home-create-topic-button").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("home-create-topic-button").performClick()
-        assertEquals(true, createTopicCalled)
     }
 
     @Test
@@ -215,8 +175,6 @@ class HomePaneTest {
                     onSubmitParserInput = {},
                     onTopicSelected = {},
                     onOpenSettings = {},
-                    onOpenManage = {},
-                    onCreateTopic = {},
                     searchQuery = "",
                     onSearchQueryChanged = {},
                     onOpenClipboard = {},
@@ -241,8 +199,6 @@ class HomePaneTest {
                     onSubmitParserInput = {},
                     onTopicSelected = {},
                     onOpenSettings = {},
-                    onOpenManage = {},
-                    onCreateTopic = {},
                     searchQuery = "",
                     onSearchQueryChanged = {},
                     onOpenClipboard = {},
@@ -267,8 +223,6 @@ class HomePaneTest {
                     onSubmitParserInput = {},
                     onTopicSelected = {},
                     onOpenSettings = {},
-                    onOpenManage = {},
-                    onCreateTopic = {},
                     searchQuery = "",
                     onSearchQueryChanged = {},
                     onOpenClipboard = {},
@@ -295,8 +249,6 @@ class HomePaneTest {
                     onSubmitParserInput = {},
                     onTopicSelected = {},
                     onOpenSettings = {},
-                    onOpenManage = {},
-                    onCreateTopic = {},
                     searchQuery = "",
                     onSearchQueryChanged = {},
                     onOpenClipboard = {},

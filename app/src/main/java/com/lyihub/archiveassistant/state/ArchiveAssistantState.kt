@@ -9,6 +9,7 @@ import com.lyihub.archiveassistant.domain.KnowledgeItem
 import com.lyihub.archiveassistant.domain.LocalModelState
 import com.lyihub.archiveassistant.domain.LocalModelStatus
 import com.lyihub.archiveassistant.domain.Topic
+import com.lyihub.archiveassistant.domain.resolveTopicId
 
 enum class TopicNameDialogMode {
     CREATE,
@@ -73,11 +74,13 @@ data class ArchiveAssistantState(
     val latestClipboardSnapshot: ClipboardSnapshot? = null,
     val ignoredClipboardSnapshot: ClipboardSnapshot? = null,
 ) {
-    val itemsByTopic: Map<String, List<KnowledgeItem>> = items.groupBy { it.topicId }
+    val itemsByTopic: Map<String, List<KnowledgeItem>> = items.groupBy { resolveTopicId(it.topicId) }
 
-    val selectedTopic: Topic? = topics.firstOrNull { it.id == selectedTopicId }
+    private val resolvedSelectedTopicId: String? = selectedTopicId?.let(::resolveTopicId)
 
-    val selectedTopicItems: List<KnowledgeItem> = selectedTopicId
+    val selectedTopic: Topic? = topics.firstOrNull { it.id == resolvedSelectedTopicId }
+
+    val selectedTopicItems: List<KnowledgeItem> = resolvedSelectedTopicId
         ?.let { topicId -> itemsByTopic[topicId].orEmpty() }
         .orEmpty()
 
@@ -96,7 +99,7 @@ data class ArchiveAssistantState(
         val query = homeSearchQuery.lowercase()
         val matchingTopicIds = items
             .filter { it.title.lowercase().contains(query) || it.summary.lowercase().contains(query) }
-            .map { it.topicId }
+            .map { resolveTopicId(it.topicId) }
             .toSet()
         topics
             .filter { it.title.lowercase().contains(query) || it.id in matchingTopicIds }

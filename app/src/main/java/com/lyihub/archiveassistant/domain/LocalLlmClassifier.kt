@@ -9,7 +9,8 @@ class LocalLlmClassifier(private val engine: LocalLlmEngine) {
             return ClassificationResult.BlankInput()
         }
 
-        val output = engine.generate(promptFor(normalizedInput, topics)).getOrElse {
+        val ministryTopics = sixMinistryTopics
+        val output = engine.generate(promptFor(normalizedInput, ministryTopics)).getOrElse {
             return ClassificationResult.Unknown
         }.trim()
         if (output.isEmpty()) {
@@ -19,12 +20,12 @@ class LocalLlmClassifier(private val engine: LocalLlmEngine) {
         return runCatching {
             val json = JSONObject(output)
             val topicName = json.optString("topic").trim()
-            val matchedTopic = topics.firstOrNull { it.title == topicName }
-                ?: return ClassificationResult.Unknown
+            val matchedTopicId = topics.firstOrNull { it.title == topicName || it.id == topicName }?.id
+                ?: ministryTopics.firstOrNull { it.title == topicName || it.id == topicName }?.id
 
             ClassificationResult.Classified(
                 ClassificationPayload(
-                    topicId = matchedTopic.id,
+                    topicId = resolveTopicId(matchedTopicId ?: topicName),
                     contentType = ContentType.WEB_ARTICLE,
                     title = normalizedInput.lineSequence().firstOrNull { it.isNotBlank() }?.trim()?.take(28)
                         ?: "提取内容",
@@ -38,9 +39,10 @@ class LocalLlmClassifier(private val engine: LocalLlmEngine) {
     }
 
     private fun promptFor(rawInput: String, topics: List<Topic>): String = """
-        你是一个归档助手。根据以下输入内容，从给定主题列表中选择最匹配的主题。
+        你是一个归档助手。根据以下输入内容，从六部主题列表中选择最匹配的主题。
         输入内容：$rawInput
-        可选主题：${topics.joinToString(", ") { it.title }}
-        请只返回 JSON，格式：{"topic": "主题名", "confidence": 0.0-1.0, "reason": "简短理由"}
+        可选主题：${topics.joinToString(", ") { "${it.id}=${it.title}" }}
+        topic 必须返回上述六部 ID 之一：${topics.joinToString(", ") { it.id }}。禁止创建新主题。
+        请只返回 JSON，格式：{"topic": "六部ID", "confidence": 0.0-1.0, "reason": "简短理由"}
     """.trimIndent()
 }

@@ -8,6 +8,7 @@ import com.lyihub.archiveassistant.domain.FetchedDocumentContext
 import com.lyihub.archiveassistant.domain.FetchedWebContext
 import com.lyihub.archiveassistant.domain.KnowledgeItem
 import com.lyihub.archiveassistant.domain.SampleKnowledgeData
+import com.lyihub.archiveassistant.domain.SixMinistry
 import com.lyihub.archiveassistant.domain.SmartSummarizeRequest
 import com.lyihub.archiveassistant.domain.SmartSummarizeResult
 import kotlinx.coroutines.runBlocking
@@ -76,9 +77,9 @@ class RemoteApiSmartSummarizerTest {
 
         assertTrue(result is SmartSummarizeResult.Success)
         val body = transport.calls.single().body.orEmpty()
-        assertTrue(body.contains("现有主题"))
+        assertTrue(body.contains("六部主题"))
         assertTrue(body.contains(SampleKnowledgeData.DefaultTopicId))
-        assertTrue(body.contains("大模型架构研究"))
+        assertTrue(body.contains("户 · 府库"))
         assertTrue(!body.contains("相关已归档素材"))
         assertTrue(!body.contains("selectedSnippets"))
         assertTrue(!body.contains("item-existing"))
@@ -340,6 +341,38 @@ class RemoteApiSmartSummarizerTest {
         val result = summarizer.summarize(SmartSummarizeRequest("test"), SampleKnowledgeData.topics)
         assertTrue(result is SmartSummarizeResult.Success)
         assertEquals(DocumentFormat.PDF, (result as SmartSummarizeResult.Success).documentFormat)
+    }
+
+    @Test
+    fun summarize_unknownTopicFallsBackToTreasury() = runBlocking {
+        val json =
+            """{"topicId":"topic-missing","contentType":"DOCUMENT","title":"Agent 论文","summary":"介绍。","sourceUrl":"","documentFormat":"MARKDOWN"}"""
+        val transport = FakeRemoteTransport(openAiCompatibleBody(json))
+        val summarizer = RemoteApiSmartSummarizer(
+            AiEngineSettings(engineType = AiEngineType.OPENAI_COMPATIBLE, baseUrl = "https://api.example.com/v1"),
+            transport,
+        )
+
+        val result = summarizer.summarize(SmartSummarizeRequest("test"), SampleKnowledgeData.topics)
+
+        assertTrue(result is SmartSummarizeResult.Success)
+        assertEquals(SixMinistry.TREASURY.id, (result as SmartSummarizeResult.Success).topicId)
+    }
+
+    @Test
+    fun summarize_legacyTopicFallsBackToTreasury() = runBlocking {
+        val json =
+            """{"topicId":"topic-ai-architecture","contentType":"DOCUMENT","title":"Agent 论文","summary":"介绍。","sourceUrl":"","documentFormat":"MARKDOWN"}"""
+        val transport = FakeRemoteTransport(openAiCompatibleBody(json))
+        val summarizer = RemoteApiSmartSummarizer(
+            AiEngineSettings(engineType = AiEngineType.OPENAI_COMPATIBLE, baseUrl = "https://api.example.com/v1"),
+            transport,
+        )
+
+        val result = summarizer.summarize(SmartSummarizeRequest("test"), SampleKnowledgeData.topics)
+
+        assertTrue(result is SmartSummarizeResult.Success)
+        assertEquals(SixMinistry.TREASURY.id, (result as SmartSummarizeResult.Success).topicId)
     }
 
     private class FakeRemoteTransport(

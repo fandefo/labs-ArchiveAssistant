@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import android.util.Log
 import com.lyihub.archiveassistant.data.AiEngineSettingsRepository
+import com.lyihub.archiveassistant.data.AppDataPreferences
 import com.lyihub.archiveassistant.data.AppDataRepository
 import com.lyihub.archiveassistant.data.DefaultDocumentContentExtractor
 import com.lyihub.archiveassistant.data.ModelDownloadManager
@@ -40,6 +41,8 @@ import com.lyihub.archiveassistant.domain.SmartSummarizeResult
 import com.lyihub.archiveassistant.domain.SmartSummarizer
 import com.lyihub.archiveassistant.domain.Topic
 import com.lyihub.archiveassistant.domain.WebUrlDetector
+import com.lyihub.archiveassistant.domain.resolveTopicId
+import com.lyihub.archiveassistant.domain.sixMinistryTopics
 import com.lyihub.archiveassistant.service.LocalInferenceGateway
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -93,8 +96,19 @@ class ArchiveAssistantStateStore(
     private fun loadPersistedStateAsync() {
         val repo = appDataRepository ?: return
         scope.launch {
-            val persistedTopics = repo.loadTopics()
-            val persistedItems = repo.loadItems()
+            val snapshot = repo.loadSnapshot() ?: return@launch
+            if (snapshot.topics is AppDataPreferences.DecodeResult.Corrupt) return@launch
+
+            val persistedTopics = when (snapshot.topics) {
+                is AppDataPreferences.DecodeResult.Valid -> sixMinistryTopics
+                AppDataPreferences.DecodeResult.Missing -> sixMinistryTopics
+                is AppDataPreferences.DecodeResult.Corrupt -> return@launch
+            }
+            val persistedItems = when (val items = snapshot.items) {
+                is AppDataPreferences.DecodeResult.Valid -> normalizeItemTopicIds(items.value)
+                AppDataPreferences.DecodeResult.Missing -> emptyList()
+                is AppDataPreferences.DecodeResult.Corrupt -> emptyList()
+            }
             if (persistedTopics.isEmpty() && persistedItems.isEmpty()) return@launch
 
             val restoredState = resolveMockImagePaths(
@@ -118,6 +132,13 @@ class ArchiveAssistantStateStore(
 
     private suspend fun persistData(topics: List<Topic>, items: List<KnowledgeItem>) {
         appDataRepository?.saveAll(topics, items)
+    }
+
+    private fun normalizeItemTopicIds(items: List<KnowledgeItem>): List<KnowledgeItem> {
+        return items.map { item ->
+            val resolvedTopicId = resolveTopicId(item.topicId)
+            if (item.topicId == resolvedTopicId) item else item.copy(topicId = resolvedTopicId)
+        }
     }
 
     private fun saveAiSettings() {
@@ -258,23 +279,29 @@ class ArchiveAssistantStateStore(
     }
 
     fun openTopicManagementForCreate() {
-        state = state.copy(selectedPane = AppPane.MANAGE, selectedTopicId = null, modalItem = null)
-        openCreateTopicDialog()
+        state = state.copy(
+            selectedPane = AppPane.MANAGE,
+            selectedTopicId = null,
+            modalItem = null,
+            topicNameDialogMode = null,
+            topicNameDialogTopicId = null,
+            topicValidationMessage = TOPIC_CRUD_DISABLED_MESSAGE,
+        )
     }
 
     fun openCreateTopicDialog() {
         state = state.copy(
-            topicNameDialogMode = com.lyihub.archiveassistant.state.TopicNameDialogMode.CREATE,
+            topicNameDialogMode = null,
             topicNameDialogTopicId = null,
-            topicValidationMessage = null,
+            topicValidationMessage = TOPIC_CRUD_DISABLED_MESSAGE,
         )
     }
 
     fun openRenameTopicDialog(topicId: String) {
         state = state.copy(
-            topicNameDialogMode = com.lyihub.archiveassistant.state.TopicNameDialogMode.RENAME,
-            topicNameDialogTopicId = topicId,
-            topicValidationMessage = null,
+            topicNameDialogMode = null,
+            topicNameDialogTopicId = null,
+            topicValidationMessage = TOPIC_CRUD_DISABLED_MESSAGE,
         )
     }
 
@@ -302,7 +329,10 @@ class ArchiveAssistantStateStore(
     }
 
     fun openDeleteConfirmDialog(topicId: String) {
-        state = state.copy(deleteConfirmTopicId = topicId)
+        state = state.copy(
+            deleteConfirmTopicId = null,
+            topicValidationMessage = TOPIC_CRUD_DISABLED_MESSAGE,
+        )
     }
 
     fun closeDeleteConfirmDialog() {
@@ -341,8 +371,9 @@ class ArchiveAssistantStateStore(
         val normalizedSummary = summary.trim()
         val normalizedSourceUrl = sourceUrl?.trim()?.takeIf { it.isNotBlank() }
 
+        val resolvedTopicId = resolveTopicId(topicId)
         val validationMessage = when {
-            state.topics.none { it.id == topicId } -> "请选择归属主题"
+            state.topics.none { it.id == resolvedTopicId } -> "请选择归属主题"
             normalizedTitle.isBlank() -> "请输入资料标题"
             contentType == ContentType.WEB_ARTICLE && normalizedSourceUrl == null -> "请输入链接"
             (contentType == ContentType.IMAGE_SCREENSHOT || contentType == ContentType.DOCUMENT)
@@ -360,7 +391,7 @@ class ArchiveAssistantStateStore(
         val finalSummary = if (useAiSummary) "" else normalizedSummary
         val item = KnowledgeItem(
             id = "item-user-$itemIndex",
-            topicId = topicId,
+            topicId = resolvedTopicId,
             contentType = contentType,
             title = normalizedTitle,
             summary = finalSummary,
@@ -373,10 +404,10 @@ class ArchiveAssistantStateStore(
         state = state.copy(
             items = state.items + item,
             topics = state.topics.map { topic ->
-                if (topic.id == topicId) topic.copy(updatedAtEpochMillis = now) else topic
+                if (topic.id == resolvedTopicId) topic.copy(updatedAtEpochMillis = now) else topic
             },
             selectedPane = AppPane.DETAIL,
-            selectedTopicId = topicId,
+            selectedTopicId = resolvedTopicId,
             activeDetailFilter = ContentType.ALL,
             addItemDialogVisible = false,
             addItemDialogValidationMessage = null,
@@ -453,7 +484,9 @@ class ArchiveAssistantStateStore(
         }
 
         val finalSummary = if (useAiSummary) "" else normalizedSummary
+        val resolvedTopicId = resolveTopicId(originalItem.topicId)
         val updatedItem = originalItem.copy(
+            topicId = resolvedTopicId,
             contentType = contentType,
             title = normalizedTitle,
             summary = finalSummary,
@@ -466,7 +499,7 @@ class ArchiveAssistantStateStore(
         state = state.copy(
             items = state.items.map { if (it.id == originalItem.id) updatedItem else it },
             topics = state.topics.map { topic ->
-                if (topic.id == originalItem.topicId) topic.copy(updatedAtEpochMillis = now) else topic
+                if (topic.id == resolvedTopicId) topic.copy(updatedAtEpochMillis = now) else topic
             },
             editingItem = null,
             editItemDialogValidationMessage = null,
@@ -476,11 +509,12 @@ class ArchiveAssistantStateStore(
     }
 
     fun openTopic(topicId: String) {
-        if (state.topics.none { it.id == topicId }) return
+        val resolvedTopicId = resolveTopicId(topicId)
+        if (state.topics.none { it.id == resolvedTopicId }) return
 
         state = state.copy(
             selectedPane = AppPane.DETAIL,
-            selectedTopicId = topicId,
+            selectedTopicId = resolvedTopicId,
             activeDetailFilter = ContentType.ALL,
             modalItem = null,
         )
@@ -652,8 +686,9 @@ class ArchiveAssistantStateStore(
         rawInput: String,
         closeClipboardOnSuccess: Boolean,
     ) {
+        val resolvedTopicId = resolveTopicId(result.topicId)
         val validationMessage = when {
-            state.topics.none { it.id == result.topicId } -> "智能总结结果无效，请重试"
+            state.topics.none { it.id == resolvedTopicId } -> "智能总结结果无效，请重试"
             result.contentType == ContentType.ALL -> "智能总结结果无效，请重试"
             result.title.isBlank() -> "智能总结结果无效，请重试"
             else -> null
@@ -668,7 +703,7 @@ class ArchiveAssistantStateStore(
         val sourceUrl = result.sourceUrl ?: rawInput.extractSourceUrl(result.contentType)
         val item = KnowledgeItem(
             id = "item-classified-$itemIndex",
-            topicId = result.topicId,
+            topicId = resolvedTopicId,
             contentType = result.contentType,
             title = result.title,
             summary = result.summary,
@@ -678,7 +713,7 @@ class ArchiveAssistantStateStore(
             createdAtEpochMillis = now,
         )
         val topics = state.topics.map { topic ->
-            if (topic.id == result.topicId) topic.copy(updatedAtEpochMillis = now) else topic
+            if (topic.id == resolvedTopicId) topic.copy(updatedAtEpochMillis = now) else topic
         }
         val items = state.items + item
 
@@ -691,7 +726,7 @@ class ArchiveAssistantStateStore(
             parserValidationMessage = null,
             smartSummarizationMessage = null,
             selectedPane = AppPane.DETAIL,
-            selectedTopicId = result.topicId,
+            selectedTopicId = resolvedTopicId,
             activeDetailFilter = ContentType.ALL,
             clipboardContent = if (closeClipboardOnSuccess) null else state.clipboardContent,
             clipboardImageUri = if (closeClipboardOnSuccess) null else state.clipboardImageUri,
@@ -721,11 +756,12 @@ class ArchiveAssistantStateStore(
 
             is ClassificationResult.Classified -> {
                 val payload = result.payload
+                val resolvedTopicId = resolveTopicId(payload.topicId)
                 val itemIndex = nextItemIndex++
                 val now = System.currentTimeMillis()
                 val item = KnowledgeItem(
                     id = "item-classified-$itemIndex",
-                    topicId = payload.topicId,
+                    topicId = resolvedTopicId,
                     contentType = payload.contentType,
                     title = payload.title,
                     summary = payload.summary,
@@ -737,12 +773,12 @@ class ArchiveAssistantStateStore(
                 state = state.copy(
                     items = state.items + item,
                     topics = state.topics.map { topic ->
-                        if (topic.id == payload.topicId) topic.copy(updatedAtEpochMillis = now) else topic
+                        if (topic.id == resolvedTopicId) topic.copy(updatedAtEpochMillis = now) else topic
                     },
                     parserInput = "",
                     parserValidationMessage = null,
                     selectedPane = AppPane.DETAIL,
-                    selectedTopicId = payload.topicId,
+                    selectedTopicId = resolvedTopicId,
                     activeDetailFilter = ContentType.ALL,
                 )
                 saveData()
@@ -763,61 +799,19 @@ class ArchiveAssistantStateStore(
     }
 
     fun createTopic(title: String) {
-        val normalizedTitle = title.trim()
-        val validationMessage = topicTitleValidationMessage(normalizedTitle)
-        if (validationMessage != null) {
-            state = state.copy(topicValidationMessage = validationMessage)
-            return
-        }
-
-        val topicIndex = nextTopicIndex++
-        val topic = Topic(
-            id = "topic-user-$topicIndex",
-            title = normalizedTitle,
-            iconName = "folder-spark",
-            iconColor = "#5e5d59",
-            updatedAtEpochMillis = System.currentTimeMillis(),
-        )
-        state = state.copy(
-            topics = state.topics + topic,
-            selectedPane = AppPane.DETAIL,
-            selectedTopicId = topic.id,
-            topicValidationMessage = null,
-        )
-        saveData()
+        rejectTopicCrud()
     }
 
     fun renameTopic(topicId: String, title: String) {
-        val normalizedTitle = title.trim()
-        val validationMessage = topicTitleValidationMessage(normalizedTitle, topicId)
-        if (validationMessage != null) {
-            state = state.copy(topicValidationMessage = validationMessage)
-            return
-        }
-
-        val renameEpoch = System.currentTimeMillis()
-
-        state = state.copy(
-            topics = state.topics.map { topic ->
-                if (topic.id == topicId) topic.copy(title = normalizedTitle, updatedAtEpochMillis = renameEpoch) else topic
-            },
-            topicValidationMessage = null,
-        )
-        saveData()
+        rejectTopicCrud()
     }
 
     fun deleteTopic(topicId: String) {
-        val deletingActiveTopic = state.selectedTopicId == topicId
-        state = state.copy(
-            topics = state.topics.filterNot { it.id == topicId },
-            items = state.items.filterNot { it.topicId == topicId },
-            selectedPane = if (deletingActiveTopic) AppPane.TOPICS else state.selectedPane,
-            selectedTopicId = if (deletingActiveTopic) null else state.selectedTopicId,
-            activeDetailFilter = if (deletingActiveTopic) ContentType.ALL else state.activeDetailFilter,
-            modalItem = state.modalItem?.takeUnless { it.topicId == topicId },
-            topicValidationMessage = null,
-        )
-        saveData()
+        rejectTopicCrud()
+    }
+
+    private fun rejectTopicCrud() {
+        state = state.copy(topicValidationMessage = TOPIC_CRUD_DISABLED_MESSAGE)
     }
 
     fun selectFilter(contentType: ContentType) {
@@ -917,6 +911,7 @@ class ArchiveAssistantStateStore(
 
     fun acceptClipboardAndManualCreate() {
         val targetTopicId = state.selectedTopicId
+            ?.let(::resolveTopicId)
             ?.takeIf { selectedTopicId -> state.topics.any { it.id == selectedTopicId } }
             ?: state.recentTopics.firstOrNull()?.id
             ?: return
@@ -1114,6 +1109,7 @@ class ArchiveAssistantStateStore(
 
     private companion object {
         const val TAG = "ArchiveAssistantStateStore"
+        const val TOPIC_CRUD_DISABLED_MESSAGE = "六部分类已固定，不能新建、重命名或删除。"
         const val SMART_SUMMARIZER_UNAVAILABLE_MESSAGE = "智能总结不可用，请先配置真实 AI 引擎"
         const val LOCAL_AI_UNAVAILABLE_MESSAGE = "本地 AI 不可用，请先开启模型"
     }

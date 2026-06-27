@@ -10,6 +10,11 @@ import kotlinx.coroutines.flow.firstOrNull
 class AppDataRepository(
     private val dataStore: DataStore<Preferences>,
 ) {
+    data class Snapshot(
+        val topics: AppDataPreferences.DecodeResult<List<Topic>>,
+        val items: AppDataPreferences.DecodeResult<List<KnowledgeItem>>,
+    )
+
     suspend fun loadTopics(): List<Topic> {
         val preferences = dataStore.data.firstOrNull() ?: return emptyList()
         return AppDataPreferences.decodeTopics(preferences)
@@ -18,6 +23,14 @@ class AppDataRepository(
     suspend fun loadItems(): List<KnowledgeItem> {
         val preferences = dataStore.data.firstOrNull() ?: return emptyList()
         return AppDataPreferences.decodeItems(preferences)
+    }
+
+    suspend fun loadSnapshot(): Snapshot? {
+        val preferences = dataStore.data.firstOrNull() ?: return null
+        return Snapshot(
+            topics = AppDataPreferences.tryDecodeTopics(preferences),
+            items = AppDataPreferences.tryDecodeItems(preferences),
+        )
     }
 
     suspend fun saveAll(topics: List<Topic>, items: List<KnowledgeItem>) {

@@ -7,27 +7,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LocalLlmSmartSummarizerTest {
-    private val topics = listOf(
-        Topic(
-            id = "topic-ai",
-            title = "AI 研究",
-            iconName = "folder",
-            iconColor = "#111111",
-            updatedAtEpochMillis = 1L,
-        ),
-        Topic(
-            id = "topic-reading",
-            title = "阅读",
-            iconName = "folder",
-            iconColor = "#222222",
-            updatedAtEpochMillis = 2L,
-        ),
-    )
+    private val topics = sixMinistryTopics
 
     private val existingItems = listOf(
         KnowledgeItem(
             id = "item-1",
-            topicId = "topic-ai",
+            topicId = SixMinistry.OFFICIALS.id,
             contentType = ContentType.DOCUMENT,
             title = "AI Agent 论文",
             summary = "AI Agent 记忆与工具使用",
@@ -41,14 +26,14 @@ class LocalLlmSmartSummarizerTest {
     @Test
     fun summarizeSuccessParsesStrictJson() = runTest {
         val summarizer = summarizerReturning(
-            """{"topicId":"topic-ai","contentType":"DOCUMENT","title":"Agent 论文","summary":"介绍 Agent 记忆与工具使用。","sourceUrl":"","documentFormat":"PDF"}""",
+            """{"topicId":"officials","contentType":"DOCUMENT","title":"Agent 论文","summary":"介绍 Agent 记忆与工具使用。","sourceUrl":"","documentFormat":"PDF"}""",
         )
 
         val result = summarizer.summarize(SmartSummarizeRequest("AI Agent 论文内容"), topics, existingItems)
 
         assertTrue(result is SmartSummarizeResult.Success)
         result as SmartSummarizeResult.Success
-        assertEquals("topic-ai", result.topicId)
+        assertEquals(SixMinistry.OFFICIALS.id, result.topicId)
         assertEquals(ContentType.DOCUMENT, result.contentType)
         assertEquals("Agent 论文", result.title)
         assertEquals("介绍 Agent 记忆与工具使用。", result.summary)
@@ -61,7 +46,7 @@ class LocalLlmSmartSummarizerTest {
         val summarizer = summarizerReturning(
             """
             ```json
-            {"topicId":"topic-ai","contentType":"DOCUMENT","title":"Agent 论文","summary":"介绍 Agent 记忆与工具使用。","sourceUrl":"","documentFormat":"PDF"}
+            {"topicId":"officials","contentType":"DOCUMENT","title":"Agent 论文","summary":"介绍 Agent 记忆与工具使用。","sourceUrl":"","documentFormat":"PDF"}
             ```
             """.trimIndent(),
         )
@@ -77,7 +62,7 @@ class LocalLlmSmartSummarizerTest {
         val summarizer = summarizerReturning(
             """
             <|turn>model
-            {"topicId":"topic-ai","contentType":"DOCUMENT","title":"Agent 论文","summary":"介绍 Agent 记忆与工具使用。","sourceUrl":"","documentFormat":"PDF"}<turn|>
+            {"topicId":"officials","contentType":"DOCUMENT","title":"Agent 论文","summary":"介绍 Agent 记忆与工具使用。","sourceUrl":"","documentFormat":"PDF"}<turn|>
             <|turn>model
             """.trimIndent(),
         )
@@ -91,7 +76,7 @@ class LocalLlmSmartSummarizerTest {
     @Test
     fun promptIncludesTopicOptionsOnly() = runTest {
         val engine = initializedEngine(
-            """{"topicId":"topic-ai","contentType":"DOCUMENT","title":"Agent 论文","summary":"介绍 Agent。","sourceUrl":"https://example.com/a","documentFormat":"PDF"}""",
+            """{"topicId":"officials","contentType":"DOCUMENT","title":"Agent 论文","summary":"介绍 Agent。","sourceUrl":"https://example.com/a","documentFormat":"PDF"}""",
         )
         val summarizer = LocalLlmSmartSummarizer(engine)
 
@@ -106,9 +91,10 @@ class LocalLlmSmartSummarizerTest {
         )
 
         val prompt = engine.lastPrompt.orEmpty()
-        assertTrue(prompt.contains("topic-ai"))
-        assertTrue(prompt.contains("topic-reading"))
+        SixMinistry.entries.forEach { ministry -> assertTrue(prompt.contains(ministry.id)) }
         assertTrue(prompt.contains("禁止创建新主题"))
+        assertTrue(!prompt.contains("topic-ai"))
+        assertTrue(!prompt.contains("topic-reading"))
         assertTrue(!prompt.contains("item-1"))
         assertTrue(!prompt.contains("AI Agent 记忆与工具使用"))
         assertTrue(prompt.contains("https://example.com/a"))
@@ -118,7 +104,7 @@ class LocalLlmSmartSummarizerTest {
     @Test
     fun promptIncludesFetchedWebContextWhenAvailable() = runTest {
         val engine = initializedEngine(
-            """{"topicId":"topic-ai","contentType":"WEB_ARTICLE","title":"From Fetched Title","summary":"Based on fetched body.","sourceUrl":"https://example.com/article","documentFormat":"UNKNOWN"}""",
+            """{"topicId":"officials","contentType":"WEB_ARTICLE","title":"From Fetched Title","summary":"Based on fetched body.","sourceUrl":"https://example.com/article","documentFormat":"UNKNOWN"}""",
         )
         val summarizer = LocalLlmSmartSummarizer(engine)
         val context = FetchedWebContext(
@@ -151,7 +137,7 @@ class LocalLlmSmartSummarizerTest {
     @Test
     fun promptIncludesFetchedDocumentContextWhenAvailable() = runTest {
         val engine = initializedEngine(
-            """{"topicId":"topic-ai","contentType":"DOCUMENT","title":"Doc Title","summary":"Based on document text.","sourceUrl":"","documentFormat":"DOCX"}""",
+            """{"topicId":"officials","contentType":"DOCUMENT","title":"Doc Title","summary":"Based on document text.","sourceUrl":"","documentFormat":"DOCX"}""",
         )
         val summarizer = LocalLlmSmartSummarizer(engine)
         val context = FetchedDocumentContext(
@@ -189,12 +175,23 @@ class LocalLlmSmartSummarizerTest {
     }
 
     @Test
-    fun unknownTopicReturnsFailure() = runTest {
+    fun unknownTopicFallsBackToTreasury() = runTest {
         val result = summarizerReturning(
             """{"topicId":"topic-missing","contentType":"DOCUMENT","title":"Title","summary":"Summary","sourceUrl":"","documentFormat":"PDF"}""",
         ).summarize(SmartSummarizeRequest("content"), topics)
 
-        assertFailure(result)
+        assertTrue(result is SmartSummarizeResult.Success)
+        assertEquals(SixMinistry.TREASURY.id, (result as SmartSummarizeResult.Success).topicId)
+    }
+
+    @Test
+    fun legacyTopicFallsBackToTreasury() = runTest {
+        val result = summarizerReturning(
+            """{"topicId":"topic-ai","contentType":"DOCUMENT","title":"Title","summary":"Summary","sourceUrl":"","documentFormat":"PDF"}""",
+        ).summarize(SmartSummarizeRequest("content"), topics)
+
+        assertTrue(result is SmartSummarizeResult.Success)
+        assertEquals(SixMinistry.TREASURY.id, (result as SmartSummarizeResult.Success).topicId)
     }
 
     @Test
@@ -211,7 +208,7 @@ class LocalLlmSmartSummarizerTest {
     @Test
     fun invalidEnumReturnsFailure() = runTest {
         val result = summarizerReturning(
-            """{"topicId":"topic-ai","contentType":"ARTICLE","title":"Title","summary":"Summary","sourceUrl":"","documentFormat":"PDF"}""",
+            """{"topicId":"officials","contentType":"ARTICLE","title":"Title","summary":"Summary","sourceUrl":"","documentFormat":"PDF"}""",
         ).summarize(SmartSummarizeRequest("content"), topics)
 
         assertFailure(result)
@@ -220,7 +217,7 @@ class LocalLlmSmartSummarizerTest {
     @Test
     fun allContentTypeReturnsFailure() = runTest {
         val result = summarizerReturning(
-            """{"topicId":"topic-ai","contentType":"ALL","title":"Title","summary":"Summary","sourceUrl":"","documentFormat":"PDF"}""",
+            """{"topicId":"officials","contentType":"ALL","title":"Title","summary":"Summary","sourceUrl":"","documentFormat":"PDF"}""",
         ).summarize(SmartSummarizeRequest("content"), topics)
 
         assertFailure(result)
@@ -229,7 +226,7 @@ class LocalLlmSmartSummarizerTest {
     @Test
     fun missingDocumentFormatReturnsFailure() = runTest {
         val result = summarizerReturning(
-            """{"topicId":"topic-ai","contentType":"DOCUMENT","title":"Title","summary":"Summary","sourceUrl":""}""",
+            """{"topicId":"officials","contentType":"DOCUMENT","title":"Title","summary":"Summary","sourceUrl":""}""",
         ).summarize(SmartSummarizeRequest("content"), topics)
 
         assertFailure(result)
@@ -238,7 +235,7 @@ class LocalLlmSmartSummarizerTest {
     @Test
     fun invalidDocumentFormatReturnsFailure() = runTest {
         val result = summarizerReturning(
-            """{"topicId":"topic-ai","contentType":"DOCUMENT","title":"Title","summary":"Summary","sourceUrl":"","documentFormat":"HTML"}""",
+            """{"topicId":"officials","contentType":"DOCUMENT","title":"Title","summary":"Summary","sourceUrl":"","documentFormat":"HTML"}""",
         ).summarize(SmartSummarizeRequest("content"), topics)
 
         assertFailure(result)
@@ -247,7 +244,7 @@ class LocalLlmSmartSummarizerTest {
     @Test
     fun missingRequiredFieldReturnsFailure() = runTest {
         val result = summarizerReturning(
-            """{"topicId":"topic-ai","contentType":"DOCUMENT","title":"Title","sourceUrl":"","documentFormat":"PDF"}""",
+            """{"topicId":"officials","contentType":"DOCUMENT","title":"Title","sourceUrl":"","documentFormat":"PDF"}""",
         ).summarize(SmartSummarizeRequest("content"), topics)
 
         assertFailure(result)
@@ -256,7 +253,7 @@ class LocalLlmSmartSummarizerTest {
     @Test
     fun blankRequiredFieldReturnsFailure() = runTest {
         val result = summarizerReturning(
-            """{"topicId":"topic-ai","contentType":"DOCUMENT","title":" ","summary":"Summary","sourceUrl":"","documentFormat":"PDF"}""",
+            """{"topicId":"officials","contentType":"DOCUMENT","title":" ","summary":"Summary","sourceUrl":"","documentFormat":"PDF"}""",
         ).summarize(SmartSummarizeRequest("content"), topics)
 
         assertFailure(result)
@@ -265,7 +262,7 @@ class LocalLlmSmartSummarizerTest {
     @Test
     fun unknownDocumentFormatSucceedsWhenExplicitlyReturned() = runTest {
         val result = summarizerReturning(
-            """{"topicId":"topic-ai","contentType":"WEB_ARTICLE","title":"Title","summary":"Summary","sourceUrl":"","documentFormat":"UNKNOWN"}""",
+            """{"topicId":"officials","contentType":"WEB_ARTICLE","title":"Title","summary":"Summary","sourceUrl":"","documentFormat":"UNKNOWN"}""",
         ).summarize(SmartSummarizeRequest("content"), topics)
 
         assertTrue(result is SmartSummarizeResult.Success)

@@ -523,8 +523,6 @@ private fun SinglePaneLayout(
             onSubmitParserInput = stateStore::submitParserInput,
             onTopicSelected = stateStore::openTopic,
             onOpenSettings = stateStore::openSettings,
-            onOpenManage = stateStore::openTopicManagement,
-            onCreateTopic = stateStore::openTopicManagementForCreate,
             onSearchQueryChanged = stateStore::updateHomeSearchQuery,
             onOpenClipboard = stateStore::openLatestClipboardDialog,
         )
@@ -556,8 +554,6 @@ private fun SinglePaneLayout(
                     onSubmitParserInput = stateStore::submitParserInput,
                     onTopicSelected = stateStore::openTopic,
                     onOpenSettings = stateStore::openSettings,
-                    onOpenManage = stateStore::openTopicManagement,
-                    onCreateTopic = stateStore::openTopicManagementForCreate,
                     onSearchQueryChanged = stateStore::updateHomeSearchQuery,
                     onOpenClipboard = stateStore::openLatestClipboardDialog,
                 )
@@ -587,18 +583,6 @@ private fun SinglePaneLayout(
             itemsByTopic = state.itemsByTopic,
             onBack = stateStore::closePanes,
             onTopicSelected = stateStore::openTopic,
-            onCreateTopic = stateStore::openCreateTopicDialog,
-            onRenameTopic = stateStore::openRenameTopicDialog,
-            onDeleteTopic = stateStore::openDeleteConfirmDialog,
-            onConfirmCreateTopic = stateStore::confirmCreateTopic,
-            onConfirmRenameTopic = stateStore::confirmRenameTopic,
-            onConfirmDeleteTopic = stateStore::confirmDeleteTopic,
-            onCloseTopicNameDialog = stateStore::closeTopicNameDialog,
-            onCloseDeleteConfirmDialog = stateStore::closeDeleteConfirmDialog,
-            topicNameDialogMode = state.topicNameDialogMode,
-            topicNameDialogTopicId = state.topicNameDialogTopicId,
-            topicValidationMessage = state.topicValidationMessage,
-            deleteConfirmTopicId = state.deleteConfirmTopicId,
         )
 
         AppPane.CLASSIFICATION_REVIEW -> HomePane(
@@ -614,8 +598,6 @@ private fun SinglePaneLayout(
             onSubmitParserInput = stateStore::submitParserInput,
             onTopicSelected = stateStore::openTopic,
             onOpenSettings = stateStore::openSettings,
-            onOpenManage = stateStore::openTopicManagement,
-            onCreateTopic = stateStore::openTopicManagementForCreate,
             onSearchQueryChanged = stateStore::updateHomeSearchQuery,
             onOpenClipboard = stateStore::openLatestClipboardDialog,
         )
@@ -647,8 +629,6 @@ private fun SinglePaneLayout(
                     onSubmitParserInput = stateStore::submitParserInput,
                     onTopicSelected = stateStore::openTopic,
                     onOpenSettings = stateStore::openSettings,
-                    onOpenManage = stateStore::openTopicManagement,
-                    onCreateTopic = stateStore::openTopicManagementForCreate,
                     onSearchQueryChanged = stateStore::updateHomeSearchQuery,
                     onOpenClipboard = stateStore::openLatestClipboardDialog,
                 )
@@ -684,8 +664,6 @@ private fun TwoPaneLayout(
                 onSubmitParserInput = stateStore::submitParserInput,
                 onTopicSelected = stateStore::openTopic,
                 onOpenSettings = stateStore::openSettings,
-                onOpenManage = stateStore::openTopicManagement,
-                onCreateTopic = stateStore::openTopicManagementForCreate,
                 onSearchQueryChanged = stateStore::updateHomeSearchQuery,
                 onOpenClipboard = stateStore::openLatestClipboardDialog,
             )
@@ -756,18 +734,6 @@ private fun TwoPaneLayout(
                     itemsByTopic = state.itemsByTopic,
                     onBack = stateStore::closePanes,
                     onTopicSelected = stateStore::openTopic,
-                    onCreateTopic = stateStore::openCreateTopicDialog,
-                    onRenameTopic = stateStore::openRenameTopicDialog,
-                    onDeleteTopic = stateStore::openDeleteConfirmDialog,
-                    onConfirmCreateTopic = stateStore::confirmCreateTopic,
-                    onConfirmRenameTopic = stateStore::confirmRenameTopic,
-                    onConfirmDeleteTopic = stateStore::confirmDeleteTopic,
-                    onCloseTopicNameDialog = stateStore::closeTopicNameDialog,
-                    onCloseDeleteConfirmDialog = stateStore::closeDeleteConfirmDialog,
-                    topicNameDialogMode = state.topicNameDialogMode,
-                    topicNameDialogTopicId = state.topicNameDialogTopicId,
-                    topicValidationMessage = state.topicValidationMessage,
-                    deleteConfirmTopicId = state.deleteConfirmTopicId,
                 )
 
                 AppPane.CLASSIFICATION_REVIEW -> EmptyDetailPane()

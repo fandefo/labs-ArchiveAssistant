@@ -14,22 +14,30 @@ object AppDataPreferences {
     val TopicsKey = stringPreferencesKey("app_topics_json")
     val ItemsKey = stringPreferencesKey("app_items_json")
 
+    sealed interface DecodeResult<out T> {
+        data class Valid<T>(val value: T) : DecodeResult<T>
+        data object Missing : DecodeResult<Nothing>
+        data class Corrupt(val rawJson: String) : DecodeResult<Nothing>
+    }
+
     fun decodeTopics(preferences: Preferences): List<Topic> {
-        val json = preferences[TopicsKey] ?: return emptyList()
         return try {
-            val array = JSONArray(json)
-            (0 until array.length()).map { i ->
-                val obj = array.getJSONObject(i)
-                Topic(
-                    id = obj.getString("id"),
-                    title = obj.getString("title"),
-                    iconName = obj.getString("iconName"),
-                    iconColor = obj.getString("iconColor"),
-                    updatedAtEpochMillis = obj.getLong("updatedAtEpochMillis"),
-                )
+            when (val result = tryDecodeTopics(preferences)) {
+                is DecodeResult.Valid -> result.value
+                DecodeResult.Missing,
+                is DecodeResult.Corrupt -> emptyList()
             }
         } catch (_: Exception) {
             emptyList()
+        }
+    }
+
+    fun tryDecodeTopics(preferences: Preferences): DecodeResult<List<Topic>> {
+        val json = preferences[TopicsKey] ?: return DecodeResult.Missing
+        return try {
+            DecodeResult.Valid(parseTopics(json))
+        } catch (_: Exception) {
+            DecodeResult.Corrupt(json)
         }
     }
 
@@ -48,28 +56,23 @@ object AppDataPreferences {
     }
 
     fun decodeItems(preferences: Preferences): List<KnowledgeItem> {
-        val json = preferences[ItemsKey] ?: return emptyList()
         return try {
-            val array = JSONArray(json)
-            (0 until array.length()).map { i ->
-                val obj = array.getJSONObject(i)
-                KnowledgeItem(
-                    id = obj.getString("id"),
-                    topicId = obj.getString("topicId"),
-                    contentType = ContentType.valueOf(obj.getString("contentType")),
-                    title = obj.getString("title"),
-                    summary = obj.optString("summary", ""),
-                    fullText = obj.optString("fullText", ""),
-                    sourceUrl = obj.optString("sourceUrl", "").takeIf { it.isNotEmpty() },
-                    documentFormat = obj.optString("documentFormat", "").takeIf { it.isNotEmpty() }
-                        ?.let { runCatching { DocumentFormat.valueOf(it) }.getOrNull() },
-                    fileName = obj.optString("fileName", "").takeIf { it.isNotEmpty() },
-                    fileSize = if (obj.has("fileSize") && !obj.isNull("fileSize")) obj.getLong("fileSize") else null,
-                    createdAtEpochMillis = obj.getLong("createdAtEpochMillis"),
-                )
+            when (val result = tryDecodeItems(preferences)) {
+                is DecodeResult.Valid -> result.value
+                DecodeResult.Missing,
+                is DecodeResult.Corrupt -> emptyList()
             }
         } catch (_: Exception) {
             emptyList()
+        }
+    }
+
+    fun tryDecodeItems(preferences: Preferences): DecodeResult<List<KnowledgeItem>> {
+        val json = preferences[ItemsKey] ?: return DecodeResult.Missing
+        return try {
+            DecodeResult.Valid(parseItems(json))
+        } catch (_: Exception) {
+            DecodeResult.Corrupt(json)
         }
     }
 
@@ -91,5 +94,40 @@ object AppDataPreferences {
             })
         }
         preferences[ItemsKey] = array.toString()
+    }
+
+    private fun parseTopics(json: String): List<Topic> {
+        val array = JSONArray(json)
+        return (0 until array.length()).map { i ->
+            val obj = array.getJSONObject(i)
+            Topic(
+                id = obj.getString("id"),
+                title = obj.getString("title"),
+                iconName = obj.getString("iconName"),
+                iconColor = obj.getString("iconColor"),
+                updatedAtEpochMillis = obj.getLong("updatedAtEpochMillis"),
+            )
+        }
+    }
+
+    private fun parseItems(json: String): List<KnowledgeItem> {
+        val array = JSONArray(json)
+        return (0 until array.length()).map { i ->
+            val obj = array.getJSONObject(i)
+            KnowledgeItem(
+                id = obj.getString("id"),
+                topicId = obj.getString("topicId"),
+                contentType = ContentType.valueOf(obj.getString("contentType")),
+                title = obj.getString("title"),
+                summary = obj.optString("summary", ""),
+                fullText = obj.optString("fullText", ""),
+                sourceUrl = obj.optString("sourceUrl", "").takeIf { it.isNotEmpty() },
+                documentFormat = obj.optString("documentFormat", "").takeIf { it.isNotEmpty() }
+                    ?.let { runCatching { DocumentFormat.valueOf(it) }.getOrNull() },
+                fileName = obj.optString("fileName", "").takeIf { it.isNotEmpty() },
+                fileSize = if (obj.has("fileSize") && !obj.isNull("fileSize")) obj.getLong("fileSize") else null,
+                createdAtEpochMillis = obj.getLong("createdAtEpochMillis"),
+            )
+        }
     }
 }

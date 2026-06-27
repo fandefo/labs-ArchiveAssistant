@@ -50,21 +50,15 @@ class MockKnowledgeClassifier(
 
     private fun selectTopic(input: String, topics: List<Topic>): Topic {
         val lowerInput = input.lowercase()
-        val preferredTitle = when {
-            listOf("ui", "ux", "design", "interface", "界面", "交互", "设计").any { it in lowerInput } -> "UX/UI 灵感板"
-            listOf("anthropology", "fieldwork", "人类学", "田野", "仪式").any { it in lowerInput } -> "阅读剪报：人类学"
-            listOf("travel", "trip", "旅行", "目的地").any { it in lowerInput } -> "冷门旅行地参考"
-            else -> "大模型架构研究"
+        val preferredLabel = when {
+            listOf("ui", "ux", "design", "interface", "界面", "交互", "设计").any { it in lowerInput } -> SixMinistry.WORKS.label
+            listOf("anthropology", "fieldwork", "人类学", "田野", "仪式").any { it in lowerInput } -> SixMinistry.RITES.label
+            listOf("travel", "trip", "旅行", "目的地").any { it in lowerInput } -> SixMinistry.TREASURY.label
+            else -> SixMinistry.OFFICIALS.label
         }
-        return topics.firstOrNull { it.title == preferredTitle }
-            ?: topics.firstOrNull()
-            ?: Topic(
-                id = SampleKnowledgeData.DefaultTopicId,
-                title = "大模型架构研究",
-                iconName = "folder-spark",
-                iconColor = "#b85c38",
-                updatedAtEpochMillis = 1_715_000_000_000,
-            )
+        return topics.firstOrNull { it.title == preferredLabel }
+            ?.let { it.copy(id = resolveTopicId(it.id)) }
+            ?: SixMinistry.byId(resolveTopicId(null))!!.toTopic()
     }
 
     private fun titleFor(input: String): String = input

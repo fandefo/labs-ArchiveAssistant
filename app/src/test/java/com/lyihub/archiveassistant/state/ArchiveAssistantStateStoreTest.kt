@@ -3,6 +3,9 @@ package com.lyihub.archiveassistant.state
 import android.net.Uri
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.mutablePreferencesOf
+import androidx.datastore.preferences.core.preferencesOf
+import com.lyihub.archiveassistant.data.AppDataPreferences
 import com.lyihub.archiveassistant.data.AppDataRepository
 import com.lyihub.archiveassistant.data.DocumentContentExtractionResult
 import com.lyihub.archiveassistant.data.DocumentContentExtractor
@@ -18,15 +21,18 @@ import com.lyihub.archiveassistant.domain.ContentType
 import com.lyihub.archiveassistant.domain.DocumentFormat
 import com.lyihub.archiveassistant.domain.FakeLocalLlmEngine
 import com.lyihub.archiveassistant.domain.InferenceBackend
+import com.lyihub.archiveassistant.domain.KnowledgeItem
 import com.lyihub.archiveassistant.domain.LocalLlmEngine
 import com.lyihub.archiveassistant.domain.LocalLlmSmartSummarizer
 import com.lyihub.archiveassistant.domain.LocalModelInfo
 import com.lyihub.archiveassistant.domain.LocalModelState
 import com.lyihub.archiveassistant.domain.LocalModelStatus
 import com.lyihub.archiveassistant.domain.SampleKnowledgeData
+import com.lyihub.archiveassistant.domain.SixMinistry
 import com.lyihub.archiveassistant.domain.SmartSummarizeRequest
 import com.lyihub.archiveassistant.domain.SmartSummarizeResult
 import com.lyihub.archiveassistant.domain.SmartSummarizer
+import com.lyihub.archiveassistant.domain.Topic
 import com.lyihub.archiveassistant.service.LocalInferenceGateway
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +56,10 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ArchiveAssistantStateStoreTest {
+    private companion object {
+        const val TOPIC_CRUD_DISABLED_MESSAGE = "六部分类已固定，不能新建、重命名或删除。"
+    }
+
     private val testDispatcher: TestDispatcher = StandardTestDispatcher()
 
     @Before
@@ -67,6 +77,10 @@ class ArchiveAssistantStateStoreTest {
 
         assertEquals(AppPane.TOPICS, store.state.selectedPane)
         assertEquals(SampleKnowledgeData.topics, store.state.topics)
+        assertEquals(SixMinistry.entries.size, store.state.topics.size)
+        assertEquals(SixMinistry.entries.map { it.id }, store.state.topics.map { it.id })
+        assertEquals(SixMinistry.entries.map { it.label }, store.state.topics.map { it.title })
+        assertTrue(store.state.topics.none { it.id.equals("other", ignoreCase = true) || it.title.contains("其他") })
         assertEquals(SampleKnowledgeData.items, store.state.items)
         assertEquals(SampleKnowledgeData.defaultAiEngineSettings, store.state.aiSettings)
         assertEquals(
@@ -112,17 +126,21 @@ class ArchiveAssistantStateStoreTest {
     }
 
     @Test
-    fun deleteTopic_whenActiveTopic_returnsToTopicsAndClearsItems() {
+    fun deleteTopic_whenActiveTopic_isDisabledAndPreservesTopicsAndItems() {
         val store = ArchiveAssistantStateStore()
         store.openTopic(SampleKnowledgeData.DefaultTopicId)
+        val topicsBefore = store.state.topics
+        val itemsBefore = store.state.items
+        val selectedTopicIdBefore = store.state.selectedTopicId
 
         store.deleteTopic(SampleKnowledgeData.DefaultTopicId)
 
-        assertEquals(AppPane.TOPICS, store.state.selectedPane)
-        assertNull(store.state.selectedTopicId)
+        assertEquals(AppPane.DETAIL, store.state.selectedPane)
+        assertEquals(selectedTopicIdBefore, store.state.selectedTopicId)
         assertEquals(ContentType.ALL, store.state.activeDetailFilter)
-        assertFalse(store.state.topics.any { it.id == SampleKnowledgeData.DefaultTopicId })
-        assertFalse(store.state.items.any { it.topicId == SampleKnowledgeData.DefaultTopicId })
+        assertEquals(topicsBefore, store.state.topics)
+        assertEquals(itemsBefore, store.state.items)
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
     }
 
     @Test
@@ -138,10 +156,46 @@ class ArchiveAssistantStateStoreTest {
     }
 
     @Test
+    fun computedTopicViews_resolveUnknownRawItemTopicIdsToTreasury() {
+        val staleItem = legacyItem(topicId = "legacy-raw-topic").copy(
+            title = "Legacy treasury paper",
+            summary = "A stale item summary",
+            contentType = ContentType.DOCUMENT,
+        )
+        val store = ArchiveAssistantStateStore(
+            initialState = ArchiveAssistantState(
+                topics = SampleKnowledgeData.topics,
+                items = SampleKnowledgeData.items + staleItem,
+                aiSettings = SampleKnowledgeData.defaultAiEngineSettings,
+                selectedTopicId = SixMinistry.TREASURY.id,
+                activeDetailFilter = ContentType.DOCUMENT,
+                homeSearchQuery = "legacy treasury",
+            )
+        )
+
+        assertTrue(store.state.itemsByTopic.getValue(SixMinistry.TREASURY.id).any { it.id == staleItem.id })
+        assertEquals(SixMinistry.TREASURY.id, store.state.selectedTopic?.id)
+        assertTrue(store.state.selectedTopicItems.any { it.id == staleItem.id })
+        assertTrue(store.state.filteredSelectedTopicItems.any { it.id == staleItem.id })
+        assertTrue(store.state.searchedTopics.any { it.id == SixMinistry.TREASURY.id })
+    }
+
+    @Test
+    fun openTopic_withUnknownRawTopicId_selectsTreasuryCompatibilityTopic() {
+        val store = ArchiveAssistantStateStore()
+
+        store.openTopic("legacy-raw-topic")
+
+        assertEquals(AppPane.DETAIL, store.state.selectedPane)
+        assertEquals(SixMinistry.TREASURY.id, store.state.selectedTopicId)
+        assertEquals(SixMinistry.TREASURY.id, store.state.selectedTopic?.id)
+    }
+
+    @Test
     fun submitParserInput_whenClassified_addsItemAndClearsInputAndUpdatesTopicTimestamp() {
         val store = smartStore(
             SmartSummarizeResult.Success(
-                topicId = "topic-ui-inspiration",
+                topicId = SixMinistry.WORKS.id,
                 contentType = ContentType.IMAGE_SCREENSHOT,
                 title = "Settings panel",
                 summary = "UX screenshot image of a settings panel",
@@ -149,7 +203,7 @@ class ArchiveAssistantStateStoreTest {
             )
         )
         val initialItemCount = store.state.items.size
-        val topicBefore = store.state.topics.first { it.id == "topic-ui-inspiration" }
+        val topicBefore = store.state.topics.first { it.id == SixMinistry.WORKS.id }
 
         store.updateParserInput("UX screenshot image of a settings panel")
         store.submitParserInput()
@@ -158,14 +212,14 @@ class ArchiveAssistantStateStoreTest {
         val newItem = store.state.items.last()
         assertEquals(initialItemCount + 1, store.state.items.size)
         assertEquals("item-classified-6", newItem.id)
-        assertEquals("topic-ui-inspiration", newItem.topicId)
+        assertEquals(SixMinistry.WORKS.id, newItem.topicId)
         assertEquals(ContentType.IMAGE_SCREENSHOT, newItem.contentType)
         assertEquals("", store.state.parserInput)
         assertNull(store.state.parserValidationMessage)
         assertEquals(AppPane.DETAIL, store.state.selectedPane)
-        assertEquals("topic-ui-inspiration", store.state.selectedTopicId)
+        assertEquals(SixMinistry.WORKS.id, store.state.selectedTopicId)
 
-        val topicAfter = store.state.topics.first { it.id == "topic-ui-inspiration" }
+        val topicAfter = store.state.topics.first { it.id == SixMinistry.WORKS.id }
         assertTrue(topicAfter.updatedAtEpochMillis > topicBefore.updatedAtEpochMillis)
     }
 
@@ -173,7 +227,7 @@ class ArchiveAssistantStateStoreTest {
     fun submitParserInput_whenSmartSummarizeSucceeds_addsItemFromOriginalInput() {
         val summarizer = FakeSmartSummarizer(
             SmartSummarizeResult.Success(
-                topicId = "topic-ui-inspiration",
+                topicId = SixMinistry.WORKS.id,
                 contentType = ContentType.WEB_ARTICLE,
                 title = "智能摘要标题",
                 summary = "智能摘要内容",
@@ -183,7 +237,7 @@ class ArchiveAssistantStateStoreTest {
         )
         val store = smartStore(summarizer)
         val initialItemCount = store.state.items.size
-        val topicBefore = store.state.topics.first { it.id == "topic-ui-inspiration" }
+        val topicBefore = store.state.topics.first { it.id == SixMinistry.WORKS.id }
 
         store.updateParserInput("Original raw text without URL")
         store.submitParserInput()
@@ -193,7 +247,7 @@ class ArchiveAssistantStateStoreTest {
         assertEquals(1, summarizer.callCount)
         assertEquals(initialItemCount + 1, store.state.items.size)
         assertEquals("item-classified-6", newItem.id)
-        assertEquals("topic-ui-inspiration", newItem.topicId)
+        assertEquals(SixMinistry.WORKS.id, newItem.topicId)
         assertEquals(ContentType.WEB_ARTICLE, newItem.contentType)
         assertEquals("智能摘要标题", newItem.title)
         assertEquals("智能摘要内容", newItem.summary)
@@ -204,9 +258,9 @@ class ArchiveAssistantStateStoreTest {
         assertFalse(store.state.isSmartSummarizing)
         assertNull(store.state.smartSummarizationMessage)
         assertEquals(AppPane.DETAIL, store.state.selectedPane)
-        assertEquals("topic-ui-inspiration", store.state.selectedTopicId)
+        assertEquals(SixMinistry.WORKS.id, store.state.selectedTopicId)
 
-        val topicAfter = store.state.topics.first { it.id == "topic-ui-inspiration" }
+        val topicAfter = store.state.topics.first { it.id == SixMinistry.WORKS.id }
         assertTrue(topicAfter.updatedAtEpochMillis > topicBefore.updatedAtEpochMillis)
     }
 
@@ -390,17 +444,21 @@ class ArchiveAssistantStateStoreTest {
     }
 
     @Test
-    fun submitParserInput_whenSmartResultInvalid_persistsNoItemAndShowsMessage() {
+    fun submitParserInput_whenSmartResultHasUnknownTopicId_fallsBackToTreasuryAndSavesItem() {
         val summarizer = FakeSmartSummarizer(successResult(topicId = "missing-topic"))
         val store = smartStore(summarizer)
+        val initialItemCount = store.state.items.size
 
         store.updateParserInput("raw input")
         store.submitParserInput()
         waitUntil { !store.state.isSmartSummarizing }
 
+        val newItem = store.state.items.last()
         assertEquals(1, summarizer.callCount)
-        assertEquals(SampleKnowledgeData.items, store.state.items)
-        assertEquals("智能总结结果无效，请重试", store.state.smartSummarizationMessage)
+        assertEquals(initialItemCount + 1, store.state.items.size)
+        assertEquals(SixMinistry.TREASURY.id, newItem.topicId)
+        assertEquals(SixMinistry.TREASURY.id, store.state.selectedTopicId)
+        assertNull(store.state.smartSummarizationMessage)
         assertFalse(store.state.isSmartSummarizing)
     }
 
@@ -609,6 +667,57 @@ class ArchiveAssistantStateStoreTest {
     }
 
     @Test
+    fun confirmAddItem_withUnknownRawTopicId_resolvesToTreasuryAndSavesItem() {
+        val store = ArchiveAssistantStateStore()
+        val initialItemCount = store.state.items.size
+
+        store.confirmAddItem(
+            topicId = "legacy-raw-topic",
+            title = "Unknown topic import",
+            contentType = ContentType.DOCUMENT,
+            sourceUrl = "content://example/import.md",
+            summary = "Imported note",
+            useAiSummary = false,
+            documentFormat = DocumentFormat.MARKDOWN,
+            fileName = "import.md",
+        )
+
+        val newItem = store.state.items.last()
+        assertEquals(initialItemCount + 1, store.state.items.size)
+        assertEquals(SixMinistry.TREASURY.id, newItem.topicId)
+        assertEquals(SixMinistry.TREASURY.id, store.state.selectedTopicId)
+        assertNull(store.state.addItemDialogValidationMessage)
+    }
+
+    @Test
+    fun confirmEditItem_withUnknownRawOriginalTopicId_resolvesItemToTreasury() {
+        val staleItem = legacyItem(topicId = "legacy-raw-topic")
+        val store = ArchiveAssistantStateStore(
+            initialState = ArchiveAssistantState(
+                topics = SampleKnowledgeData.topics,
+                items = SampleKnowledgeData.items + staleItem,
+                aiSettings = SampleKnowledgeData.defaultAiEngineSettings,
+            )
+        )
+
+        store.openEditItemDialog(staleItem.id)
+        store.confirmEditItem(
+            title = "Edited stale item",
+            contentType = ContentType.DOCUMENT,
+            sourceUrl = "content://example/edited.md",
+            summary = "Edited summary",
+            useAiSummary = false,
+            documentFormat = DocumentFormat.MARKDOWN,
+            fileName = "edited.md",
+        )
+
+        val editedItem = store.state.items.single { it.id == staleItem.id }
+        assertEquals(SixMinistry.TREASURY.id, editedItem.topicId)
+        assertEquals("Edited stale item", editedItem.title)
+        assertNull(store.state.editItemDialogValidationMessage)
+    }
+
+    @Test
     fun recentTopics_returnsTopFiveByUpdatedAtDescending() {
         val store = ArchiveAssistantStateStore()
 
@@ -619,7 +728,7 @@ class ArchiveAssistantStateStoreTest {
 
     @Test
     fun recentTopics_afterClassification_reflectsUpdatedTopicAtTop() {
-        val topicId = "topic-anthropology-clips"
+        val topicId = SixMinistry.RITES.id
         val store = smartStore(successResult(topicId = topicId))
         val topicBefore = store.state.topics.first { it.id == topicId }
         assertTrue(store.state.recentTopics.any { it.id == topicId })
@@ -634,148 +743,154 @@ class ArchiveAssistantStateStoreTest {
     }
 
     @Test
-    fun topicCreateRenameAndSettingsUpdate_validateStateActions() {
+    fun topicCreateRenameAndSettingsUpdate_keepTopicsFixedAndUpdateSettings() {
         val store = ArchiveAssistantStateStore()
+        val topicsBefore = store.state.topics
+        val selectedTopicIdBefore = store.state.selectedTopicId
 
         store.createTopic("新主题")
-        assertEquals("topic-user-6", store.state.selectedTopicId)
-        assertEquals("新主题", store.state.selectedTopic?.title)
+        assertEquals(topicsBefore, store.state.topics)
+        assertEquals(selectedTopicIdBefore, store.state.selectedTopicId)
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
 
-        store.renameTopic("topic-user-6", "重命名主题")
-        assertEquals("重命名主题", store.state.selectedTopic?.title)
-
-        store.createTopic("重命名主题")
-        assertEquals("主题名称已存在", store.state.topicValidationMessage)
-
-        store.createTopic("   ")
-        assertEquals("请输入主题名称", store.state.topicValidationMessage)
+        val topicBeforeRename = store.state.topics.first { it.id == SampleKnowledgeData.DefaultTopicId }
+        store.renameTopic(SampleKnowledgeData.DefaultTopicId, "重命名主题")
+        assertEquals(topicBeforeRename, store.state.topics.first { it.id == SampleKnowledgeData.DefaultTopicId })
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
 
         val settings = AiEngineSettings(engineType = AiEngineType.LOCAL_MODEL)
         store.updateAiSettings(settings)
         assertEquals(settings, store.state.aiSettings)
-        assertNotNull(store.state.topicValidationMessage)
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
     }
 
     @Test
-    fun openTopicManagementForCreate_navigatesToManageAndOpensCreateDialog() {
+    fun openTopicManagementForCreate_navigatesToManageWithoutCreateDialog() {
         val store = ArchiveAssistantStateStore()
 
         store.openTopicManagementForCreate()
 
         assertEquals(AppPane.MANAGE, store.state.selectedPane)
-        assertEquals(TopicNameDialogMode.CREATE, store.state.topicNameDialogMode)
+        assertNull(store.state.topicNameDialogMode)
         assertNull(store.state.topicNameDialogTopicId)
-        assertNull(store.state.topicValidationMessage)
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
     }
 
     @Test
-    fun openCreateTopicDialog_setsCreateModeAndClearsValidation() {
+    fun openCreateTopicDialog_doesNotOpenFlowAndShowsDisabledMessage() {
         val store = ArchiveAssistantStateStore()
-        store.createTopic("   ")
-        assertNotNull(store.state.topicValidationMessage)
 
         store.openCreateTopicDialog()
 
-        assertEquals(TopicNameDialogMode.CREATE, store.state.topicNameDialogMode)
+        assertNull(store.state.topicNameDialogMode)
         assertNull(store.state.topicNameDialogTopicId)
-        assertNull(store.state.topicValidationMessage)
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
     }
 
     @Test
-    fun openRenameTopicDialog_setsRenameModeAndTopicId() {
+    fun openRenameTopicDialog_doesNotOpenFlowAndShowsDisabledMessage() {
         val store = ArchiveAssistantStateStore()
 
         store.openRenameTopicDialog(SampleKnowledgeData.DefaultTopicId)
 
-        assertEquals(TopicNameDialogMode.RENAME, store.state.topicNameDialogMode)
-        assertEquals(SampleKnowledgeData.DefaultTopicId, store.state.topicNameDialogTopicId)
-        assertNull(store.state.topicValidationMessage)
+        assertNull(store.state.topicNameDialogMode)
+        assertNull(store.state.topicNameDialogTopicId)
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
     }
 
     @Test
-    fun confirmCreateTopic_whenValid_createsTopicAndClosesDialog() {
+    fun confirmCreateTopic_isDisabledAndDoesNotCreateTopic() {
         val store = ArchiveAssistantStateStore()
-        store.openCreateTopicDialog()
+        val topicsBefore = store.state.topics
+        val selectedPaneBefore = store.state.selectedPane
 
         store.confirmCreateTopic("新建主题")
 
-        assertTrue(store.state.topics.any { it.title == "新建主题" })
-        assertEquals(AppPane.DETAIL, store.state.selectedPane)
+        assertEquals(topicsBefore, store.state.topics)
+        assertEquals(selectedPaneBefore, store.state.selectedPane)
         assertNull(store.state.topicNameDialogMode)
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
     }
 
     @Test
-    fun confirmCreateTopic_whenInvalid_keepsDialogOpenAndShowsValidation() {
+    fun confirmCreateTopic_whenBlank_isDisabledAndDoesNotValidateTitle() {
         val store = ArchiveAssistantStateStore()
-        store.openCreateTopicDialog()
+        val topicsBefore = store.state.topics
 
         store.confirmCreateTopic("   ")
 
-        assertEquals(TopicNameDialogMode.CREATE, store.state.topicNameDialogMode)
-        assertEquals("请输入主题名称", store.state.topicValidationMessage)
+        assertEquals(topicsBefore, store.state.topics)
+        assertNull(store.state.topicNameDialogMode)
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
     }
 
     @Test
-    fun confirmRenameTopic_whenValid_renamesAndClosesDialog() {
+    fun confirmRenameTopic_withoutOpenDialog_isNoOp() {
         val store = ArchiveAssistantStateStore()
-        store.openRenameTopicDialog(SampleKnowledgeData.DefaultTopicId)
+        val topicsBefore = store.state.topics
 
         store.confirmRenameTopic("新名字")
 
-        assertTrue(store.state.topics.any { it.id == SampleKnowledgeData.DefaultTopicId && it.title == "新名字" })
+        assertEquals(topicsBefore, store.state.topics)
         assertNull(store.state.topicNameDialogMode)
+        assertNull(store.state.topicValidationMessage)
     }
 
     @Test
-    fun renameTopic_updatesTimestamp() {
+    fun renameTopic_isDisabledAndDoesNotUpdateTitleOrTimestamp() {
         val store = ArchiveAssistantStateStore()
         val topicBefore = store.state.topics.first { it.id == SampleKnowledgeData.DefaultTopicId }
 
         store.renameTopic(SampleKnowledgeData.DefaultTopicId, "重命名后")
 
         val topicAfter = store.state.topics.first { it.id == SampleKnowledgeData.DefaultTopicId }
-        assertEquals("重命名后", topicAfter.title)
-        assertTrue(topicAfter.updatedAtEpochMillis > topicBefore.updatedAtEpochMillis)
+        assertEquals(topicBefore, topicAfter)
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
     }
 
     @Test
-    fun confirmRenameTopic_whenDuplicate_keepsDialogOpenAndShowsValidation() {
+    fun openRenameTopicDialogThenConfirmRenameTopic_doesNotRename() {
         val store = ArchiveAssistantStateStore()
-        val existingTitle = store.state.topics.first { it.id != SampleKnowledgeData.DefaultTopicId }.title
+        val topicsBefore = store.state.topics
         store.openRenameTopicDialog(SampleKnowledgeData.DefaultTopicId)
 
-        store.confirmRenameTopic(existingTitle)
+        store.confirmRenameTopic("新名字")
 
-        assertEquals(TopicNameDialogMode.RENAME, store.state.topicNameDialogMode)
-        assertEquals("主题名称已存在", store.state.topicValidationMessage)
+        assertEquals(topicsBefore, store.state.topics)
+        assertNull(store.state.topicNameDialogMode)
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
     }
 
     @Test
-    fun confirmDeleteTopic_deletesAndClosesDialog() {
+    fun confirmDeleteTopic_isDisabledBecauseDialogCannotOpen() {
         val store = ArchiveAssistantStateStore()
+        val topicsBefore = store.state.topics
+        val itemsBefore = store.state.items
         store.openDeleteConfirmDialog(SampleKnowledgeData.DefaultTopicId)
 
         store.confirmDeleteTopic()
 
         assertNull(store.state.deleteConfirmTopicId)
-        assertFalse(store.state.topics.any { it.id == SampleKnowledgeData.DefaultTopicId })
+        assertEquals(topicsBefore, store.state.topics)
+        assertEquals(itemsBefore, store.state.items)
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
     }
 
     @Test
-    fun closeDeleteConfirmDialog_clearsDialogWithoutDeleting() {
+    fun openDeleteConfirmDialog_doesNotOpenFlowAndPreservesTopics() {
         val store = ArchiveAssistantStateStore()
+        val topicsBefore = store.state.topics
         store.openDeleteConfirmDialog(SampleKnowledgeData.DefaultTopicId)
 
-        store.closeDeleteConfirmDialog()
-
         assertNull(store.state.deleteConfirmTopicId)
-        assertTrue(store.state.topics.any { it.id == SampleKnowledgeData.DefaultTopicId })
+        assertEquals(topicsBefore, store.state.topics)
+        assertEquals(TOPIC_CRUD_DISABLED_MESSAGE, store.state.topicValidationMessage)
     }
 
     @Test
     fun filterSelection_documentPdf_updatesVisibleItemsForSelectedTopic() {
         val store = ArchiveAssistantStateStore()
-        store.openTopic(SampleKnowledgeData.DefaultTopicId)
+        store.openTopic(SixMinistry.OFFICIALS.id)
 
         store.selectFilter(ContentType.DOCUMENT)
 
@@ -787,7 +902,7 @@ class ArchiveAssistantStateStoreTest {
     @Test
     fun closeCardModal_preservesSelectedFilterAndTopic() {
         val store = ArchiveAssistantStateStore()
-        store.openTopic(SampleKnowledgeData.DefaultTopicId)
+        store.openTopic(SixMinistry.OFFICIALS.id)
         store.selectFilter(ContentType.DOCUMENT)
 
         val itemId = store.state.filteredSelectedTopicItems.first().id
@@ -800,7 +915,7 @@ class ArchiveAssistantStateStoreTest {
         assertEquals(AppPane.DETAIL, store.state.selectedPane)
         assertNull(store.state.modalItem)
         assertEquals(ContentType.DOCUMENT, store.state.activeDetailFilter)
-        assertEquals(SampleKnowledgeData.DefaultTopicId, store.state.selectedTopicId)
+        assertEquals(SixMinistry.OFFICIALS.id, store.state.selectedTopicId)
     }
 
     @Test
@@ -882,7 +997,7 @@ class ArchiveAssistantStateStoreTest {
     @Test
     fun acceptClipboardAndManualCreate_withDragSource_opensAddItemDialog() {
         val store = ArchiveAssistantStateStore()
-        store.createTopic("Drag test topic")
+        val topicsBefore = store.state.topics
 
         store.showClipboard(
             content = "test.pdf",
@@ -901,6 +1016,7 @@ class ArchiveAssistantStateStoreTest {
         assertEquals("test.pdf", store.state.addItemDialogPrefill?.title)
         assertFalse(store.state.showClipboardDialog)
         assertNull(store.state.clipboardSourceLabel)
+        assertEquals(topicsBefore, store.state.topics)
         assertEquals(store.state.items.size, SampleKnowledgeData.items.size)
     }
 
@@ -1218,6 +1334,39 @@ class ArchiveAssistantStateStoreTest {
     }
 
     @Test
+    fun loadPersistedState_legacyItemsResolveStaleTopicIdToTreasury() {
+        val legacyItem = legacyItem(topicId = "topic-ai-architecture")
+        val dataStore = FakePreferencesDataStore().apply {
+            seedTopics(listOf(legacyTopic()))
+            seedItems(listOf(legacyItem))
+        }
+        val store = ArchiveAssistantStateStore(appDataRepository = AppDataRepository(dataStore))
+
+        waitUntil { store.state.items.any { it.id == legacyItem.id } }
+
+        assertEquals(SixMinistry.entries.size, store.state.topics.size)
+        assertEquals(SixMinistry.TREASURY.id, store.state.items.single { it.id == legacyItem.id }.topicId)
+        assertEquals(0, dataStore.updateCount)
+    }
+
+    @Test
+    fun loadPersistedState_corruptTopicsWithValidItemsPreservesStorageAndDoesNotRestorePartialSnapshot() {
+        val legacyItem = legacyItem(topicId = "topic-ai-architecture")
+        val dataStore = FakePreferencesDataStore().apply {
+            seedRawTopics("{not-json")
+            seedItems(listOf(legacyItem))
+        }
+        val store = ArchiveAssistantStateStore(appDataRepository = AppDataRepository(dataStore))
+
+        waitUntil { true }
+
+        assertEquals(SampleKnowledgeData.topics, store.state.topics)
+        assertEquals(SampleKnowledgeData.items, store.state.items)
+        assertEquals(listOf(legacyItem), dataStore.decodeStoredItems())
+        assertEquals(0, dataStore.updateCount)
+    }
+
+    @Test
     fun modelFileDeleted() {
         val store = localStore(modelFileExists = false)
         store.updateAiSettings(AiEngineSettings(engineType = AiEngineType.LOCAL_MODEL))
@@ -1265,8 +1414,9 @@ class ArchiveAssistantStateStoreTest {
         assertTrue(store.state.isSmartSummarizing || inferenceConnection.summarizeCallCount == 0)
         waitUntil { inferenceConnection.summarizeCallCount == 1 }
         gate.complete(successResult(title = "Async local summary"))
-        waitUntil { !store.state.isSmartSummarizing }
+        waitUntil { !store.state.isSmartSummarizing && store.state.items.any { it.title == "Async local summary" } }
         assertTrue(store.state.items.any { it.title == "Async local summary" })
+        assertEquals(null, store.state.smartSummarizationMessage)
     }
 
     @Test
@@ -1548,4 +1698,65 @@ class ArchiveAssistantStateStoreTest {
             throw IllegalStateException("save failed")
         }
     }
+
+    private class FakePreferencesDataStore : DataStore<Preferences> {
+        private val flow = MutableStateFlow(preferencesOf())
+        var updateCount = 0
+            private set
+
+        override val data: Flow<Preferences> = flow
+
+        override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences {
+            updateCount++
+            val updated = transform(flow.value)
+            flow.value = updated
+            return updated
+        }
+
+        fun seedTopics(topics: List<Topic>) {
+            val preferences = mutablePreferencesOf()
+            AppDataPreferences.encodeTopics(topics, preferences)
+            flow.value = flow.value.toMutablePreferences().apply {
+                this[AppDataPreferences.TopicsKey] = preferences[AppDataPreferences.TopicsKey].orEmpty()
+            }.toPreferences()
+        }
+
+        fun seedRawTopics(json: String) {
+            flow.value = flow.value.toMutablePreferences().apply {
+                this[AppDataPreferences.TopicsKey] = json
+            }.toPreferences()
+        }
+
+        fun seedItems(items: List<KnowledgeItem>) {
+            val preferences = mutablePreferencesOf()
+            AppDataPreferences.encodeItems(items, preferences)
+            flow.value = flow.value.toMutablePreferences().apply {
+                this[AppDataPreferences.ItemsKey] = preferences[AppDataPreferences.ItemsKey].orEmpty()
+            }.toPreferences()
+        }
+
+        fun decodeStoredItems(): List<KnowledgeItem> = AppDataPreferences.decodeItems(flow.value)
+    }
+
+    private fun legacyTopic() = Topic(
+        id = "topic-ai-architecture",
+        title = "AI 架构",
+        iconName = "brain",
+        iconColor = "#111111",
+        updatedAtEpochMillis = 1_715_000_000_100,
+    )
+
+    private fun legacyItem(topicId: String) = KnowledgeItem(
+        id = "item-legacy-1",
+        topicId = topicId,
+        contentType = ContentType.DOCUMENT,
+        title = "Legacy Item",
+        summary = "Readable legacy item",
+        fullText = "full text",
+        sourceUrl = null,
+        documentFormat = DocumentFormat.PDF,
+        fileName = "legacy.pdf",
+        fileSize = 42L,
+        createdAtEpochMillis = 1_715_000_000_200,
+    )
 }
