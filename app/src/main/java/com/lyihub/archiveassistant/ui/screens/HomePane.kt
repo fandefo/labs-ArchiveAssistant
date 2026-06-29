@@ -2,6 +2,7 @@ package com.lyihub.archiveassistant.ui.screens
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -312,7 +313,14 @@ private fun HomeFeatureCell(
   pulseActive: Boolean = false,
   workLightColor: Color? = null,
   workLightAlignment: Alignment = Alignment.TopStart,
+  workStatusAlignment: Alignment = Alignment.BottomStart,
 ) {
+  val workProgress by
+    animateFloatAsState(
+      targetValue = if (pulseActive) 1f else 0f,
+      animationSpec = tween(durationMillis = 620, easing = FastOutSlowInEasing),
+      label = "homeFeatureWorkProgress",
+    )
   val cardMotion = remember { Animatable(0f) }
   LaunchedEffect(pulseActive) {
     if (pulseActive) {
@@ -365,50 +373,75 @@ private fun HomeFeatureCell(
         color = workLightColor ?: tileVisual.borderColor,
         modifier = Modifier.matchParentSize(),
       )
-      HomeOrnament(
-        imageRes = ornamentRes,
-        modifier =
-          Modifier.align(ornamentAlignment)
-            .offset(x = ornamentOffsetX, y = ornamentOffsetY)
-            .size(ornamentSize)
-            .graphicsLayer(scaleX = if (mirrorOrnament) -1f else 1f),
-        alpha = if (large) 0.5f else 0.58f,
-        tint = ornamentTint,
-      )
-      if (label.isNotBlank()) {
-        Text(
-          text = label,
-          style = MaterialTheme.typography.labelMedium,
-          color = contentColor.copy(alpha = 0.7f),
+      BoxWithConstraints(modifier = Modifier.matchParentSize()) {
+        val activeOrnamentSize = ornamentSize * 0.58f
+        val activeOrnamentOffsetY = -(maxHeight / 2f) + activeOrnamentSize / 2f + 8.dp
+        val activeOrnamentOffsetX =
+          if (ornamentAlignment == Alignment.CenterStart) 8.dp else (-8).dp
+        val ornamentX = lerpDp(ornamentOffsetX, activeOrnamentOffsetX, workProgress)
+        val ornamentY = lerpDp(ornamentOffsetY, activeOrnamentOffsetY, workProgress)
+        val animatedOrnamentSize = lerpDp(ornamentSize, activeOrnamentSize, workProgress)
+        val textOffsetY = -(maxHeight * 0.28f) * workProgress
+        val statusOffsetY = 8.dp * (1f - workProgress)
+        HomeOrnament(
+          imageRes = ornamentRes,
           modifier =
-            Modifier.align(Alignment.TopStart).padding(horizontal = 12.dp, vertical = 10.dp),
+            Modifier.align(ornamentAlignment)
+              .offset(x = ornamentX, y = ornamentY)
+              .size(animatedOrnamentSize)
+              .graphicsLayer(scaleX = if (mirrorOrnament) -1f else 1f),
+          alpha = if (large) 0.5f else 0.58f,
+          tint = ornamentTint,
         )
-      }
-      Column(modifier = Modifier.align(textAlignment).padding(if (large) 18.dp else 12.dp)) {
-        Text(
-          text = title,
-          style =
-            if (large) {
-              MaterialTheme.typography.headlineMedium.copy(fontFamily = ImperialTitleFont)
-            } else {
-              MaterialTheme.typography.titleLarge.copy(fontFamily = ImperialTitleFont)
-            },
-          color = contentColor,
-          fontWeight = FontWeight.Normal,
-          maxLines = if (large) 2 else 1,
-        )
-        Text(
-          text = subtitle,
-          style =
-            if (large) {
-              MaterialTheme.typography.bodyMedium.copy(fontFamily = ImperialDisplayFont)
-            } else {
-              MaterialTheme.typography.bodySmall.copy(fontFamily = ImperialDisplayFont)
-            },
-          color = contentColor.copy(alpha = 0.76f),
-          maxLines = 1,
-          overflow = TextOverflow.Ellipsis,
-        )
+        if (label.isNotBlank()) {
+          Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = contentColor.copy(alpha = 0.7f),
+            modifier =
+              Modifier.align(Alignment.TopStart).padding(horizontal = 12.dp, vertical = 10.dp),
+          )
+        }
+        Column(
+          modifier =
+            Modifier.align(textAlignment)
+              .offset(y = textOffsetY)
+              .padding(if (large) 18.dp else 12.dp)
+        ) {
+          Text(
+            text = title,
+            style =
+              if (large) {
+                MaterialTheme.typography.headlineMedium.copy(fontFamily = ImperialTitleFont)
+              } else {
+                MaterialTheme.typography.titleLarge.copy(fontFamily = ImperialTitleFont)
+              },
+            color = contentColor,
+            fontWeight = FontWeight.Normal,
+            maxLines = if (large) 2 else 1,
+          )
+          Text(
+            text = subtitle,
+            style =
+              if (large) {
+                MaterialTheme.typography.bodyMedium.copy(fontFamily = ImperialDisplayFont)
+              } else {
+                MaterialTheme.typography.bodySmall.copy(fontFamily = ImperialDisplayFont)
+              },
+            color = contentColor.copy(alpha = 0.76f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+        }
+        if (workLightColor != null) {
+          WorkStatusLine(
+            active = pulseActive,
+            progress = workProgress,
+            color = workLightColor,
+            contentColor = contentColor,
+            modifier = Modifier.align(workStatusAlignment).offset(y = statusOffsetY),
+          )
+        }
       }
     }
     if (workLightColor != null) {
@@ -464,10 +497,45 @@ private fun TileShineSweep(
 }
 
 @Composable
+private fun WorkStatusLine(
+  active: Boolean,
+  progress: Float,
+  color: Color,
+  contentColor: Color,
+  modifier: Modifier = Modifier,
+) {
+  Row(
+    modifier =
+      modifier
+        .graphicsLayer { alpha = progress }
+        .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(999.dp))
+        .border(0.7.dp, color.copy(alpha = 0.44f), RoundedCornerShape(999.dp))
+        .padding(start = 4.dp, top = 3.dp, end = 10.dp, bottom = 3.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    WorkBreathingLight(
+      active = active,
+      color = color,
+      modifier = Modifier.size(22.dp),
+      haloSize = 22.dp,
+      dotSize = 5.dp,
+    )
+    Text(
+      text = "loading...",
+      style = MaterialTheme.typography.labelMedium.copy(fontFamily = ImperialDisplayFont),
+      color = contentColor.copy(alpha = 0.92f),
+      maxLines = 1,
+    )
+  }
+}
+
+@Composable
 private fun WorkBreathingLight(
   active: Boolean,
   color: Color,
   modifier: Modifier = Modifier,
+  haloSize: Dp = 34.dp,
+  dotSize: Dp = 8.dp,
 ) {
   val intensity by
     animateFloatAsState(
@@ -489,8 +557,6 @@ private fun WorkBreathingLight(
   val wave = kotlin.math.sin(progress.value * Math.PI * 2.0).toFloat()
   val glow = ((wave + 1f) / 2f).coerceIn(0f, 1f)
   val activeGlow = intensity * glow
-  val dotSize = 8.dp
-  val haloSize = 34.dp
   Box(
     modifier = modifier.size(haloSize),
     contentAlignment = Alignment.Center,
@@ -600,6 +666,10 @@ private fun cutoutPulsePath(
   }
 }
 
+private fun lerpDp(start: Dp, stop: Dp, fraction: Float): Dp {
+  return start + (stop - start) * fraction.coerceIn(0f, 1f)
+}
+
 @Composable
 private fun PalaceDashboardBlock(
   pendingCount: Int,
@@ -664,6 +734,7 @@ private fun PalaceDashboardBlock(
             pulseActive = pulseTarget == HomePulseTarget.Menxia,
             workLightColor = MenxiaWorkLight,
             workLightAlignment = Alignment.TopEnd,
+            workStatusAlignment = Alignment.BottomEnd,
           )
         }
         MemorialCell(
