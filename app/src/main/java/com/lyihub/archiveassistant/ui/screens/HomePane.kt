@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -59,6 +60,7 @@ import com.lyihub.archiveassistant.ui.theme.ImperialDisplayFont
 import com.lyihub.archiveassistant.ui.theme.ImperialIvory
 import com.lyihub.archiveassistant.ui.theme.ImperialTitleFont
 import com.lyihub.archiveassistant.ui.theme.ImperialUmber
+import com.lyihub.archiveassistant.util.toChineseCount
 
 private val HomeInk = ImperialUmber
 private val HomePaper = ImperialIvory
@@ -239,7 +241,7 @@ private fun TitleCell(
         maxLines = 1,
       )
       Text(
-        text = "中书录入 · 批奏折 · 尚书归档",
+        text = "拾取资料、整理主题、轮盘批阅、瀑布流阅读",
         style = MaterialTheme.typography.titleSmall.copy(fontFamily = ImperialDisplayFont),
         color = Color.Black.copy(alpha = 0.72f),
         maxLines = 1,
@@ -267,6 +269,7 @@ private fun HomeFeatureCell(
   ornamentOffsetY: Dp = 0.dp,
   ornamentAlignment: Alignment = Alignment.CenterEnd,
   ornamentTint: Color? = null,
+  mirrorOrnament: Boolean = false,
 ) {
   CutoutCell(
     modifier =
@@ -279,7 +282,8 @@ private fun HomeFeatureCell(
       modifier =
         Modifier.align(ornamentAlignment)
           .offset(x = ornamentOffsetX, y = ornamentOffsetY)
-          .size(ornamentSize),
+          .size(ornamentSize)
+          .graphicsLayer(scaleX = if (mirrorOrnament) -1f else 1f),
       alpha = if (large) 0.5f else 0.58f,
       tint = ornamentTint,
     )
@@ -375,6 +379,7 @@ private fun PalaceDashboardBlock(
             enabled = false,
             ornamentSize = 88.dp,
             ornamentOffsetX = 20.dp,
+            mirrorOrnament = true,
           )
         }
         MemorialCell(
@@ -397,8 +402,8 @@ private fun PalaceDashboardBlock(
           onClick = onOpenClipboard,
           testTag = "clipboard-button",
           ornamentSize = 68.dp,
-          ornamentOffsetX = 0.dp,
-          ornamentOffsetY = 0.dp,
+          ornamentOffsetX = (-14).dp,
+          ornamentOffsetY = 12.dp,
           ornamentAlignment = Alignment.TopEnd,
           ornamentTint = Color.White,
         )
@@ -508,7 +513,7 @@ private fun MemorialCell(
       modifier = Modifier.align(Alignment.CenterEnd).offset(x = 24.dp, y = (-18).dp).size(138.dp),
       alpha = 0.66f,
     )
-    Column(modifier = Modifier.align(Alignment.BottomStart).padding(18.dp)) {
+    Column(modifier = Modifier.align(Alignment.BottomStart).padding(13.dp)) {
       Text(
         text = "批奏折",
         style = MaterialTheme.typography.headlineLarge.copy(fontFamily = ImperialTitleFont),
@@ -517,7 +522,7 @@ private fun MemorialCell(
         maxLines = 1,
       )
       Text(
-        text = "今日 $pendingCount 封待批奏章",
+        text = "今日${pendingCount.toChineseCount()}封待批奏章",
         style = MaterialTheme.typography.titleSmall.copy(fontFamily = ImperialDisplayFont),
         color = Color.White.copy(alpha = 0.76f),
         maxLines = 1,
@@ -704,6 +709,7 @@ private fun MinistryFoldCard(
 ) {
   val enabled = folder.topic != null
   val imageSize = if (compact) 60.dp else 86.dp
+  val metaStyle = MaterialTheme.typography.labelSmall.copy(fontFamily = ImperialDisplayFont)
   val titleStyle =
     if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleLarge
   val summaryStyle =
@@ -719,36 +725,20 @@ private fun MinistryFoldCard(
     foldIntensity = if (compact) 0.16f else 0.2f,
     showEndFold = true,
   ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-      if (!isManagingMinistries) {
-        Image(
-          painter = painterResource(id = visual.imageRes),
-          contentDescription = null,
-          modifier = Modifier.align(Alignment.TopEnd).offset(x = 2.dp, y = (-2).dp).size(imageSize),
-          contentScale = ContentScale.Fit,
-          alpha = 0.84f,
-        )
-        Text(
-          text =
-            folder.updatedAtEpochMillis?.let { "${folder.itemCount} 篇 · ${friendlyTime(it)}" }
-              ?: "${folder.itemCount} 篇 · 待启用",
-          style = MaterialTheme.typography.labelSmall.copy(fontFamily = ImperialDisplayFont),
-          color = Color.Black.copy(alpha = 0.5f),
-          maxLines = 1,
-          softWrap = false,
-          modifier = Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 8.dp),
-        )
-      }
+    Row(
+      modifier =
+        Modifier.fillMaxSize()
+          .padding(
+            start = 16.dp,
+            top = 7.dp,
+            end = 10.dp,
+            bottom = 7.dp,
+          ),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
       Column(
-        modifier =
-          Modifier.align(Alignment.CenterStart)
-            .fillMaxWidth()
-            .padding(
-              start = 16.dp,
-              top = 7.dp,
-              end = if (isManagingMinistries) 116.dp else if (compact) 108.dp else 136.dp,
-              bottom = 7.dp,
-            ),
+        modifier = Modifier.weight(1f),
         verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 5.dp),
       ) {
         Text(
@@ -757,6 +747,7 @@ private fun MinistryFoldCard(
           color = Color.Black.copy(alpha = 0.88f),
           fontWeight = FontWeight.Normal,
           maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
         )
         Text(
           text = visual.description,
@@ -767,11 +758,41 @@ private fun MinistryFoldCard(
           overflow = TextOverflow.Ellipsis,
         )
       }
-      if (isManagingMinistries && folder.topic != null) {
+      if (!isManagingMinistries) {
         Row(
-          modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp),
+          verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+          Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+          ) {
+            Text(
+              text = "${folder.itemCount.toChineseCount()}篇",
+              style = metaStyle,
+              color = Color.Black.copy(alpha = 0.56f),
+              maxLines = 1,
+              softWrap = false,
+            )
+            Text(
+              text = folder.updatedAtEpochMillis?.let(::friendlyTime) ?: "待启用",
+              style = metaStyle,
+              color = Color.Black.copy(alpha = 0.46f),
+              maxLines = 1,
+              softWrap = false,
+            )
+          }
+          Image(
+            painter = painterResource(id = visual.imageRes),
+            contentDescription = null,
+            modifier = Modifier.size(imageSize),
+            contentScale = ContentScale.Fit,
+            alpha = 0.84f,
+          )
+        }
+      }
+      if (isManagingMinistries && folder.topic != null) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
           MinistryInlineAction(
             title = "改名",
             onClick = { onRenameTopic(folder.topic.id) },
@@ -987,9 +1008,9 @@ internal fun friendlyTime(epochMillis: Long, nowMillis: Long = System.currentTim
   return when {
     diff < 0 -> "未来"
     diff < 60_000 -> "刚刚"
-    diff < 3_600_000 -> "${diff / 60_000} 分钟前"
-    diff < 86_400_000 -> "${diff / 3_600_000} 小时前"
-    diff < 2_592_000_000L -> "${diff / 86_400_000} 天前"
+    diff < 3_600_000 -> "${(diff / 60_000).toInt().toChineseCount()}分钟前"
+    diff < 86_400_000 -> "${(diff / 3_600_000).toInt().toChineseCount()}小时前"
+    diff < 2_592_000_000L -> "${(diff / 86_400_000).toInt().toChineseCount()}天前"
     else -> "很久以前"
   }
 }

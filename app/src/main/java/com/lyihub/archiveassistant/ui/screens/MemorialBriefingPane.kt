@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,12 +62,12 @@ import com.lyihub.archiveassistant.R
 import com.lyihub.archiveassistant.domain.KnowledgeItem
 import com.lyihub.archiveassistant.ui.components.XuanPaperBackground
 import com.lyihub.archiveassistant.ui.theme.ImperialBronze
-import com.lyihub.archiveassistant.ui.theme.ImperialCinnabar
 import com.lyihub.archiveassistant.ui.theme.ImperialDisplayFont
 import com.lyihub.archiveassistant.ui.theme.ImperialIvory
 import com.lyihub.archiveassistant.ui.theme.ImperialParchment
 import com.lyihub.archiveassistant.ui.theme.ImperialStampTitleFont
 import com.lyihub.archiveassistant.ui.theme.ImperialUmber
+import com.lyihub.archiveassistant.util.toChineseCount
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.min
@@ -83,7 +84,7 @@ private const val MemorialWheelActiveScale = 1.58f
 private const val MemorialWheelFocusHalfRangeDegrees = 24f
 private const val MemorialWheelCoverSeed = 20260627
 private const val MemorialWheelDuplicateGuard = 3
-private const val MemorialWheelAutoAdvanceMillis = 5000L
+private const val MemorialWheelAutoAdvanceMillis = 4000L
 private val MemorialInk = Color.Black
 
 private data class BriefingSample(
@@ -299,20 +300,7 @@ private fun PendingVerticalNote(
 
 private fun pendingStampLines(pendingCount: Int): List<String> {
   val normalizedCount = pendingCount.coerceAtLeast(0)
-  return "待批${normalizedCount.toChineseNumeral()}封".map { it.toString() }
-}
-
-private fun Int.toChineseNumeral(): String {
-  if (this == 0) return "零"
-  val digits = listOf("零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖")
-  if (this < 10) return digits[this]
-  if (this < 20) return "拾" + if (this % 10 == 0) "" else digits[this % 10]
-  if (this < 100) {
-    val tens = this / 10
-    val ones = this % 10
-    return digits[tens] + "拾" + if (ones == 0) "" else digits[ones]
-  }
-  return toString().map { digits[it.digitToInt()] }.joinToString("")
+  return "待批${normalizedCount.toChineseCount()}封".map { it.toString() }
 }
 
 private data class WheelItemPlacement(
@@ -706,8 +694,8 @@ private fun MemorialBriefCard(
 ) {
   MemorialFramedPaperPanel(
     modifier = modifier.fillMaxWidth().heightIn(min = 70.dp),
-    cornerSize = 12.dp,
-    contentPadding = 11.dp,
+    cornerSize = 18.dp,
+    contentPadding = PaddingValues(horizontal = 17.dp, vertical = 11.dp),
   ) {
     AnimatedContent(
       targetState = sample,
@@ -762,7 +750,7 @@ private fun briefingSamplesFor(items: List<KnowledgeItem>): List<BriefingSample>
 private fun MemorialFramedPaperPanel(
   modifier: Modifier = Modifier,
   cornerSize: Dp,
-  contentPadding: Dp,
+  contentPadding: PaddingValues,
   content: @Composable BoxScope.() -> Unit,
 ) {
   val shape = RoundedCornerShape(3.dp)
@@ -822,6 +810,6 @@ private fun BoxScope.FramedPaperCorner(
     contentDescription = null,
     modifier = Modifier.align(alignment).size(size).graphicsLayer(rotationZ = rotation),
     alpha = 0.62f,
-    colorFilter = ColorFilter.tint(ImperialCinnabar.copy(alpha = 0.62f)),
+    colorFilter = ColorFilter.tint(ImperialBronze.copy(alpha = 0.76f)),
   )
 }

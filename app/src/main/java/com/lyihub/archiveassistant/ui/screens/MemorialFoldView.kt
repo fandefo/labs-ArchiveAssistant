@@ -25,6 +25,7 @@ import android.view.ViewConfiguration
 import android.view.animation.LinearInterpolator
 import android.view.animation.PathInterpolator
 import android.widget.OverScroller
+import com.lyihub.archiveassistant.util.toChineseCount
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -919,7 +920,8 @@ internal class MemorialFoldView(context: Context) : View(context) {
     drawToolbarButton(canvas, coverActionRightRect, "右滑准奏")
     drawToolbarButton(canvas, coverActionKeepRect, "上滑留中")
 
-    val counter = "第 ${coverStackIndex + 1}/${expectedDossierCount()} 封"
+    val counter =
+      "第${(coverStackIndex + 1).toChineseCount()}封，共${expectedDossierCount().toChineseCount()}封"
     drawCenteredText(
       canvas,
       counter,
@@ -1160,27 +1162,24 @@ internal class MemorialFoldView(context: Context) : View(context) {
       TextUtils.ellipsize(title, completionTitlePaint, maxTextWidth, TextUtils.TruncateAt.END)
     val fittedBody =
       TextUtils.ellipsize(body, completionBodyPaint, maxTextWidth, TextUtils.TruncateAt.END)
-    val titleHeight = completionTitlePaint.fontMetrics.run { descent - ascent }
-    val bodyHeight = completionBodyPaint.fontMetrics.run { descent - ascent }
-    val gap = dp(18f)
-    val groupCenterY = rect.centerY() - dp(16f)
-    val groupTop = groupCenterY - (titleHeight + gap + bodyHeight) / 2f
+    val titleCenterY = rect.centerY() - rect.height() * 0.18f
+    val bodyCenterY = rect.centerY()
+    val stampCenterY = rect.centerY() + rect.height() * 0.18f
     drawCenteredText(
       canvas = canvas,
       text = fittedTitle.toString(),
       x = rect.centerX(),
-      baseline = groupTop + titleHeight / 2f + textCenterOffset(completionTitlePaint),
+      baseline = titleCenterY + textCenterOffset(completionTitlePaint),
       paint = completionTitlePaint,
     )
     drawCenteredText(
       canvas = canvas,
       text = fittedBody.toString(),
       x = rect.centerX(),
-      baseline =
-        groupTop + titleHeight + gap + bodyHeight / 2f + textCenterOffset(completionBodyPaint),
+      baseline = bodyCenterY + textCenterOffset(completionBodyPaint),
       paint = completionBodyPaint,
     )
-    drawHorizontalRetreatStamp(canvas, rect.centerX(), rect.bottom - rect.height() * 0.29f)
+    drawHorizontalRetreatStamp(canvas, rect.centerX(), stampCenterY)
     canvas.restoreToCount(layer)
     paints.layerAlpha.alpha = 255
   }
@@ -2261,8 +2260,7 @@ internal class MemorialFoldView(context: Context) : View(context) {
     val groupLeft = label.centerX() - groupWidth / 2f
     val titleHeight = verticalTextHeight(titleText, titlePaint, titleLineGap)
     val coverTitleHeight = verticalTextHeight("奏章", paints.coverTitle, coverTitleLineGap)
-    val contentTop =
-      innerLabel.centerY() - max(coverTitleHeight, titleHeight).coerceAtLeast(1f) / 2f
+    val contentTop = innerLabel.top + dp(28f)
     val titleColumnX = groupLeft + titleColumnWidth / 2f
     val coverColumnX = groupLeft + titleColumnWidth + columnGap + coverColumnWidth / 2f
     drawVerticalText(
@@ -2270,7 +2268,7 @@ internal class MemorialFoldView(context: Context) : View(context) {
       text = titleText,
       paint = titlePaint,
       centerX = titleColumnX,
-      top = contentTop + (coverTitleHeight - titleHeight).coerceAtLeast(0f) / 2f,
+      top = contentTop,
       lineGap = titleLineGap,
     )
     drawVerticalText(
@@ -2487,7 +2485,7 @@ internal class MemorialFoldView(context: Context) : View(context) {
       if (readerMode == MemorialReaderMode.ArticleReader) {
         "恭呈御览"
       } else {
-        "第 ${page.dossierIndex + 1}/${expectedDossierCount()} 封 · 恭呈御览"
+        "第${(page.dossierIndex + 1).toChineseCount()}封，共${expectedDossierCount().toChineseCount()}封 · 恭呈御览"
       },
       rect.centerX(),
       y,

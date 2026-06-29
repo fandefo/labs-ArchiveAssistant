@@ -19,6 +19,7 @@ import com.lyihub.archiveassistant.data.OkHttpModelDownloadManager
 import com.lyihub.archiveassistant.service.LocalInferenceConnection
 import com.lyihub.archiveassistant.state.ArchiveAssistantStateStore
 import com.lyihub.archiveassistant.ui.theme.ArchiveAssistantTheme
+import com.lyihub.archiveassistant.util.toChineseCount
 
 private val Context.aiEngineSettingsDataStore by preferencesDataStore(name = "ai_engine_settings")
 private val Context.appDataStore by preferencesDataStore(name = "app_data")
@@ -120,7 +121,11 @@ class MainActivity : ComponentActivity() {
     )
 
     if (payload.ignoredItemCount > 0) {
-      Toast.makeText(this, "已处理第一个文件，忽略了 ${payload.ignoredItemCount} 个其他文件", Toast.LENGTH_SHORT)
+      Toast.makeText(
+          this,
+          "已处理第一个文件，忽略了${payload.ignoredItemCount.toChineseCount()}个其他文件",
+          Toast.LENGTH_SHORT,
+        )
         .show()
     }
 

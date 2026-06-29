@@ -83,6 +83,7 @@ import com.lyihub.archiveassistant.ui.components.XuanPaperBackground
 import com.lyihub.archiveassistant.ui.theme.ImperialCinnabar
 import com.lyihub.archiveassistant.ui.theme.ImperialDisplayFont
 import com.lyihub.archiveassistant.ui.theme.ImperialParchment
+import com.lyihub.archiveassistant.util.toChineseCount
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -342,7 +343,7 @@ private fun DetailCourtHeader(
 ) {
   PaneHeroHeader(
     title = topic.title,
-    description = "$itemCount 篇 · ${folderDescription(topic)}",
+    description = "${itemCount.toChineseCount()}篇 · ${folderDescription(topic)}",
     showBackButton = showBackButton,
     onBack = onBack,
     modifier = modifier.testTag("detail-summary"),

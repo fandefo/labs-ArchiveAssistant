@@ -1,6 +1,7 @@
 package com.lyihub.archiveassistant.ui.screens
 
 import android.graphics.Color as AndroidColor
+import com.lyihub.archiveassistant.util.toChineseCount
 
 internal enum class MemorialPageType {
   Cover,
@@ -183,7 +184,7 @@ internal val fallbackPendingMemorialDossiers: List<PendingMemorialDossier> =
       source = summary.source,
       summary = summary.summary,
       body =
-        "标题：${summary.title}\n\n${summary.summary}\n\n此为待批奏章演示正文，用于展示封面堆叠、横向翻阅、批复与退朝流程。第${index + 1}封奏章在演示中保持固定顺序，便于核对批阅数量与阅读分页。",
+        "标题：${summary.title}\n\n${summary.summary}\n\n此为待批奏章演示正文，用于展示封面堆叠、横向翻阅、批复与退朝流程。第${(index + 1).toChineseCount()}封奏章在演示中保持固定顺序，便于核对批阅数量与阅读分页。",
       tags = listOf("待批", "演示"),
       createdAtEpochMillis = 1_782_700_177_000L - index * 86_400_000L,
     )
