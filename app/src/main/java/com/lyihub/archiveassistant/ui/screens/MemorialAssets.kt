@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color as AndroidColor
 import android.graphics.Typeface
+import androidx.core.content.res.ResourcesCompat
 import com.lyihub.archiveassistant.R
 import kotlin.math.roundToInt
 
@@ -73,11 +74,8 @@ internal class MemorialAssets(context: Context) {
         Typeface.create(Typeface.SERIF, Typeface.NORMAL)
     }
 
-    val stampTypeface: Typeface = runCatching {
-        Typeface.createFromAsset(context.assets, "fonts/ling_dong_qi_che_chun_tang.ttf")
-    }.getOrElse {
-        heritageTypeface
-    }
+    val stampTypeface: Typeface = ResourcesCompat.getFont(context, R.font.ling_dong_qi_che_chun_tang)
+        ?: heritageTypeface
 
     private val stampLikeTexture: Bitmap? = BitmapFactory.decodeResource(
         resources,

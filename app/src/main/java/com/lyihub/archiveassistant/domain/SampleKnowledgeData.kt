@@ -2,7 +2,7 @@ package com.lyihub.archiveassistant.domain
 
 object SampleKnowledgeData {
     const val DefaultTopicId = "topic-ai-architecture"
-    const val DemoDataVersion = 3
+    const val DemoDataVersion = 4
 
     val topics: List<Topic> = listOf(
         demoTopic(DefaultTopicId, "大模型架构研究", "#B83E2F", 0),
@@ -23,19 +23,20 @@ object SampleKnowledgeData {
             tags = listOf("RAG", "上下文工程", "知识库"),
             sourceTitle = "InfoQ《从 RAG 到 Context：2025 年 RAG 技术年终总结》",
             sourceUrl = "https://www.infoq.cn/article/L452I9YAB4gaKJMmiY0T",
-            imageUrl = "https://static001.infoq.cn/resource/image/bd/35/bd15f36941d8b8d1c8875efc5c8dfd35.jpg",
             body = "这篇资料适合用于解释 RAG 为什么不只是“向量检索 + 大模型回答”。演示卡片可突出：文档解析、召回质量、上下文拼装、引用可信度和反馈评估共同决定最终体验。",
+            imageResName = "article_ai_001_rag_context_2025",
             dayOffset = 0,
         ),
         demoItem(
             id = "ai-002-rag-architecture-map",
             topicId = DefaultTopicId,
             title = "RAG 全景：从知识库到 Agent 记忆中枢",
-            summary = "面向企业知识库落地的 RAG 架构梳理，适合作为无图长文资料卡。",
+            summary = "面向企业知识库落地的 RAG 架构梳理，适合作为带图架构资料卡。",
             tags = listOf("RAG", "Agent", "企业知识库"),
             sourceTitle = "腾讯云开发者社区 RAG 全景文章",
             sourceUrl = "https://cloud.tencent.com.cn/developer/article/2654878",
-            body = "这类文章的价值在于把文档解析、混合检索、重排序、Agentic RAG 等模块放到同一张工程地图里。卡片不需要配图，重点是让用户快速识别它属于架构型资料。",
+            body = "这类文章的价值在于把文档解析、混合检索、重排序、Agentic RAG 等模块放到同一张工程地图里。卡片使用来源页真实图片，帮助用户快速识别它属于架构型资料。",
+            imageResName = "article_ai_002_rag_architecture_map",
             dayOffset = 1,
         ),
         demoItem(
@@ -57,8 +58,8 @@ object SampleKnowledgeData {
             tags = listOf("RAG", "多模态", "企业应用"),
             sourceTitle = "腾讯新闻转载 InfoQ QCon 分享",
             sourceUrl = "https://news.qq.com/rain/a/20250603A053S700",
-            imageUrl = "https://inews.gtimg.com/om_ls/OFoOrgClomtovkcmmovKozFTXJNbBVGMlKL9SkmSI1OTAAA_640330/0",
             body = "这篇文章适合展示“真实文章配图 + 技术摘要”的卡片形态。重点可放在传统 RAG 在复杂知识交互中的局限，以及跨模态知识联邦如何扩展资料来源。",
+            imageResName = "article_ai_004_rag_multimodal_federation",
             dayOffset = 3,
         ),
         demoItem(
@@ -80,8 +81,8 @@ object SampleKnowledgeData {
             tags = listOf("MoE", "Transformer", "模型架构"),
             sourceTitle = "人人都是产品经理 MoE 架构文章",
             sourceUrl = "https://www.woshipm.com/ai/6343363.html",
-            imageUrl = "https://image.woshipm.com/2023/04/13/bc685304-d9dd-11ed-9d2f-00163e0b5ff3.jpg",
             body = "这篇资料可作为 MoE 主题入口：为什么稠密模型继续堆参数会越来越贵，稀疏专家路由如何在容量和成本之间做折中。",
+            imageResName = "article_ai_006_moe_paradigm_shift",
             dayOffset = 5,
         ),
         demoItem(
@@ -92,8 +93,8 @@ object SampleKnowledgeData {
             tags = listOf("MoE", "专家模型", "通俗解释"),
             sourceTitle = "36氪《天工一刻 | 一文看懂MoE混合专家大模型》",
             sourceUrl = "https://36kr.com/p/2764338482988807",
-            imageUrl = "https://img.36krcdn.com/hsossms/20240506/v2_1b8ed1da1590469d8b6b6161ae237140@6035606_oswg166349oswg1053oswg495_img_jpg?x-oss-process=image/resize,m_mfit,w_600,h_400,limit_0/crop,w_600,h_400,g_center",
             body = "这篇文章适合演示“通俗技术解释”类型：标题明确，摘要短，配图来自来源页，用户能在右侧瀑布流中快速识别为 MoE 资料。",
+            imageResName = "article_ai_007_moe_36kr",
             dayOffset = 6,
         ),
         demoItem(
@@ -104,8 +105,8 @@ object SampleKnowledgeData {
             tags = listOf("MoE", "HuggingFace", "开源"),
             sourceTitle = "HuggingFace 中文博客",
             sourceUrl = "https://huggingface.co/blog/zh/moe",
-            imageUrl = "https://huggingface.co/blog/assets/moe/thumbnail.png",
             body = "这条资料用于补充更偏工程和开源社区的视角。它的配图来自文章 OpenGraph 元数据，不是本地插画。",
+            imageResName = "article_ai_008_moe_huggingface",
             dayOffset = 7,
         ),
         demoItem(
@@ -116,7 +117,8 @@ object SampleKnowledgeData {
             tags = listOf("MoE", "推理效率", "路由"),
             sourceTitle = "阿里云开发者社区 MoE 文章",
             sourceUrl = "https://developer.aliyun.com/article/1665178",
-            body = "该来源页返回的是平台通用分享图，不适合当作文章配图，因此此条作为纯文本卡片展示。演示重点是让“无可靠配图”的文章不要被本地素材替代。",
+            body = "该来源页包含可用的真实文章配图，演示重点是让带图资料使用本地缓存后的来源图片，而不是临时网络请求。",
+            imageResName = "article_ai_009_moe_alibaba",
             dayOffset = 8,
         ),
         demoItem(
@@ -127,7 +129,8 @@ object SampleKnowledgeData {
             tags = listOf("Agent", "RAG", "工作流"),
             sourceTitle = "腾讯云开发者社区 RAG 演进资料",
             sourceUrl = "https://cloud.tencent.com/developer/article/2601465",
-            body = "这条目用于展示 Agentic RAG 的资料归档：它不只是一次问答，而是围绕目标多次检索、判断、生成和复核。",
+            body = "这条目用于展示 Agentic RAG 的资料归档：它不只是一次问答，而是围绕目标多次检索、判断、生成和复核；配图已随演示数据本地化。",
+            imageResName = "article_ai_010_agentic_rag",
             dayOffset = 9,
         ),
         demoItem(
@@ -160,8 +163,8 @@ object SampleKnowledgeData {
             tags = listOf("MoE", "GitHub", "学习笔记"),
             sourceTitle = "GitHub aicoting/AIHub",
             sourceUrl = "https://github.com/aicoting/AIHub/blob/main/%E5%A4%A7%E6%A8%A1%E5%9E%8B/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84/%E4%B8%80%E6%96%87%E5%BC%84%E6%87%82MOE.md",
-            imageUrl = "https://opengraph.githubassets.com/223ca1a9fc2b4436bb1a8921bee1cd65fe9d0c44115e90f533a9967bae634fe8/aicoting/AIHub",
             body = "GitHub 仓库页的 OpenGraph 图来自项目页面本身，适合展示项目型资料和文章型资料在瀑布流中的混合状态。",
+            imageResName = "article_ai_013_aihub_moe_note",
             dayOffset = 12,
         ),
         demoItem(
@@ -185,8 +188,8 @@ object SampleKnowledgeData {
             tags = listOf("Design Token", "设计系统", "规范"),
             sourceTitle = "少数派 Design Token 文章",
             sourceUrl = "https://sspai.com/post/74981",
-            imageUrl = "https://rssfile.sspai.com/2022/08/03/fd0ed290060296ab712f3bab29335ef8.png?imageMogr2/auto-orient/ignore-error/1",
             body = "这篇文章适合解释为什么项目需要统一字体、颜色、圆角和标签样式。它可以作为全局设计 token 的资料卡。",
+            imageResName = "article_ui_001_design_token_sspai",
             dayOffset = 14,
         ),
         demoItem(
@@ -197,8 +200,8 @@ object SampleKnowledgeData {
             tags = listOf("Design Token", "协作", "跨端"),
             sourceTitle = "HTMLPAGE Design Tokens 指南",
             sourceUrl = "https://htmlpage.cn/topics/design/design-tokens-guide",
-            imageUrl = "https://htmlpage.cn/images/topics/design-guide.jpg",
             body = "该条目用于展示设计规范类文章：配图来自原网页元数据，正文只保留演示摘要和来源。",
+            imageResName = "article_ui_002_design_token_guide",
             dayOffset = 15,
         ),
         demoItem(
@@ -220,8 +223,8 @@ object SampleKnowledgeData {
             tags = listOf("瀑布流", "信息流", "内容卡片"),
             sourceTitle = "人人都是产品经理瀑布流设计文章",
             sourceUrl = "https://www.woshipm.com/share/6010681.html",
-            imageUrl = "https://image.woshipm.com/2023/04/13/c032d268-d9ea-11ed-bd74-00163e0b5ff3.jpg",
             body = "这篇资料可以直接支撑右侧两列瀑布流的设计方向：不同高度卡片并列，但标题、图像和标签必须形成稳定节奏。",
+            imageResName = "article_ui_004_waterfall_woshipm",
             dayOffset = 17,
         ),
         demoItem(
@@ -232,8 +235,8 @@ object SampleKnowledgeData {
             tags = listOf("瀑布流", "前端布局", "性能"),
             sourceTitle = "SegmentFault 思否瀑布流文章",
             sourceUrl = "https://segmentfault.com/a/1190000042562451",
-            imageUrl = "https://segmentfault.com/img/bVc2KBh?spec=cover",
             body = "该资料用于说明 masonry 不是普通列表，也不是单列卡片。实现上要先分配两列，再按估算高度平衡布局。",
+            imageResName = "article_ui_005_waterfall_segmentfault",
             dayOffset = 18,
         ),
         demoItem(
@@ -244,8 +247,8 @@ object SampleKnowledgeData {
             tags = listOf("空状态", "可用性", "产品体验"),
             sourceTitle = "优设网空状态设计总结",
             sourceUrl = "https://www.uisdc.com/empty-state-design-2",
-            imageUrl = "https://image.uisdc.com/wp-content/uploads/2020/08/uisdc-banner-20200809-3.jpg",
             body = "这条资料对应应用里“默认显示批奏折而不是空白”的产品原则：没有选择部门时，也应该有一个明确的默认内容。",
+            imageResName = "article_ui_006_empty_state_uisdc",
             dayOffset = 19,
         ),
         demoItem(
@@ -256,8 +259,8 @@ object SampleKnowledgeData {
             tags = listOf("空状态", "界面文案", "反馈"),
             sourceTitle = "优设网空状态页面文章",
             sourceUrl = "https://www.uisdc.com/empty-status-page-design",
-            imageUrl = "https://image.uisdc.com/wp-content/uploads/2020/11/uisdc-banner-20201109-3.jpg",
             body = "适合保存为 UI 文案与状态设计参考。演示里只保留短摘要，避免把原文全文复制进应用。",
+            imageResName = "article_ui_007_empty_status_page",
             dayOffset = 20,
         ),
         demoItem(
@@ -268,7 +271,8 @@ object SampleKnowledgeData {
             tags = listOf("折叠屏", "分栏", "适配"),
             sourceTitle = "华为折叠屏场景设计文章",
             sourceUrl = "https://cloud.tencent.com/developer/article/1969594",
-            body = "来源页只提供平台默认图，因此这条作为纯文本展示。它用于解释左侧固定入口、右侧固定内容列的布局逻辑。",
+            body = "来源页提供可用图文材料，这条用于解释左侧固定入口、右侧固定内容列的布局逻辑；配图已缓存为本地资源。",
+            imageResName = "article_ui_008_foldable_huawei",
             dayOffset = 21,
         ),
         demoItem(
@@ -279,8 +283,8 @@ object SampleKnowledgeData {
             tags = listOf("字体", "信息层级", "移动端"),
             sourceTitle = "Apple Human Interface Guidelines 字体排印",
             sourceUrl = "https://developer.apple.com/cn/design/human-interface-guidelines/typography",
-            imageUrl = "https://docs.developer.apple.com/tutorials/developer-og.jpg",
             body = "这条资料用于提醒：应用名称、右侧页面标题、卡片标题和标签应处在不同视觉层级，而不是全部使用同一字号和重量。",
+            imageResName = "article_ui_009_typography_hig",
             dayOffset = 22,
         ),
         demoItem(
@@ -302,8 +306,8 @@ object SampleKnowledgeData {
             tags = listOf("移动端", "排版", "认知负荷"),
             sourceTitle = "FreePD 移动端 UI 排版文章",
             sourceUrl = "https://freepd.cn/guides/ui-typography-principles",
-            imageUrl = "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=2000",
             body = "这条资料带有真实页面声明的远程图片。它适合演示设计灵感类卡片可以有图，但图片必须来自来源页。",
+            imageResName = "article_ui_011_mobile_typography",
             dayOffset = 24,
         ),
 
@@ -406,8 +410,8 @@ object SampleKnowledgeData {
             tags = listOf("泉州", "海丝", "城市漫游"),
             sourceTitle = "澎湃号泉州旅行文章",
             sourceUrl = "https://www.thepaper.cn/newsDetail_forward_32504122",
-            imageUrl = "https://imgpai.thepaper.cn/pphimage/20260131/a4305281-2977-45fb-8d4c-451c14798e81.jpg",
             body = "该文章正文中含有真实旅行图片。这里选取来源页图片作为卡片配图，用于展示旅行类资料的图文混排。",
+            imageResName = "article_travel_001_quanzhou_thepaper",
             dayOffset = 33,
         ),
         demoItem(
@@ -418,8 +422,8 @@ object SampleKnowledgeData {
             tags = listOf("泉州", "古城", "路线"),
             sourceTitle = "搜狐泉州旅行文章",
             sourceUrl = "https://www.sohu.com/a/822678113_122076842",
-            imageUrl = "https://q8.itc.cn/images01/20241101/24e3763929184e568aeef3581bb7e889.png",
             body = "同一城市可以保留多篇来源，但摘要要强调不同角度：这条偏景点清单，上一条偏城市气质。",
+            imageResName = "article_travel_002_quanzhou_sohu",
             dayOffset = 34,
         ),
         demoItem(
@@ -430,8 +434,8 @@ object SampleKnowledgeData {
             tags = listOf("泉州", "小众", "漫游"),
             sourceTitle = "腾讯新闻泉州小众漫游文章",
             sourceUrl = "https://news.qq.com/rain/a/20251003A06B9300",
-            imageUrl = "https://inews.gtimg.com/om_ls/OnVgr1_u1uhsaoMVHyw0nkPlFDp6J3PXpfcf1u5dI6yyQAA_640330/0",
             body = "旅行资料不一定要很长，卡片里保留“为什么值得去”和“适合什么节奏”即可。",
+            imageResName = "article_travel_003_quanzhou_small_walk",
             dayOffset = 35,
         ),
         demoItem(
@@ -442,8 +446,8 @@ object SampleKnowledgeData {
             tags = listOf("诺邓", "古村", "云南"),
             sourceTitle = "腾讯新闻诺邓古村旅行文章",
             sourceUrl = "https://news.qq.com/rain/a/20250925A02YCB00",
-            imageUrl = "https://inews.gtimg.com/news_bt/Oy_3Kp73HdbWXAXQWP4WdI2cNfNdDCfnq1_988AnhGog0AA/1000",
             body = "该来源页正文包含多张真实图片，适合展示纵向旅行图片卡。摘要突出低商业化、山地村落和盐马古道。",
+            imageResName = "article_travel_004_nuodeng_qq",
             dayOffset = 36,
         ),
         demoItem(
@@ -454,8 +458,8 @@ object SampleKnowledgeData {
             tags = listOf("诺邓", "白族", "古村"),
             sourceTitle = "搜狐诺邓古村文章",
             sourceUrl = "https://www.sohu.com/a/1008938684_122639851",
-            imageUrl = "https://q8.itc.cn/q_70/images03/20260417/79eebdc9509343b0a3032ee92eace2df.jpeg",
             body = "这条与上一条同主题但来源不同，用于演示同一地点下的资料归档可以多来源并存。",
+            imageResName = "article_travel_005_nuodeng_sohu",
             dayOffset = 37,
         ),
         demoItem(
@@ -499,8 +503,8 @@ object SampleKnowledgeData {
             tags = listOf("婺源", "徽派村落", "晒秋"),
             sourceTitle = "搜狐婺源晒秋旅行文章",
             sourceUrl = "https://www.sohu.com/a/1015315029_122434168",
-            imageUrl = "https://q6.itc.cn/images01/20260427/1f1e2997f6084cb084577c5c39804208.jpeg",
             body = "这条用于演示旅行资料中的真实文章配图：图片来自来源页 OpenGraph 元数据，不是本地素材。",
+            imageResName = "article_travel_009_wuyuan",
             dayOffset = 41,
         ),
         demoItem(
@@ -511,8 +515,8 @@ object SampleKnowledgeData {
             tags = listOf("荔波", "喀斯特", "自然"),
             sourceTitle = "搜狐荔波小七孔旅游攻略",
             sourceUrl = "https://www.sohu.com/a/911838822_120104414",
-            imageUrl = "https://q3.itc.cn/images01/20250708/852edd35213044629d0602562330ce1a.png",
             body = "该条使用来源页真实配图，摘要聚焦路线、交通、住宿和景点节奏。",
+            imageResName = "article_travel_010_libo",
             dayOffset = 42,
         ),
         demoItem(
@@ -523,8 +527,8 @@ object SampleKnowledgeData {
             tags = listOf("延边", "边境", "饮食"),
             sourceTitle = "搜狐延吉旅行印象文章",
             sourceUrl = "https://www.sohu.com/a/881505828_121948409",
-            imageUrl = "https://q0.itc.cn/q_70/images03/20250409/a7c3b22c3ff741f3b4890cb1d2f3095d.jpeg",
             body = "延边旅行资料适合记录城市气质：市场、冷面、烤肉、双语招牌和边境视角。图片来自来源页元数据。",
+            imageResName = "article_travel_011_yanbian",
             dayOffset = 43,
         ),
         demoItem(
@@ -535,8 +539,8 @@ object SampleKnowledgeData {
             tags = listOf("赤水", "丹霞", "瀑布"),
             sourceTitle = "搜狐赤水丹霞旅行文章",
             sourceUrl = "https://www.sohu.com/a/1041891267_122291801",
-            imageUrl = "https://q4.itc.cn/images01/20260626/ee508fff04f64bdca1e75ded5b02dcf9.png",
             body = "该条使用来源页真实配图，适合测试自然景观类卡片在瀑布流中的展示。",
+            imageResName = "article_travel_012_chishui",
             dayOffset = 44,
         ),
         demoItem(
@@ -547,8 +551,8 @@ object SampleKnowledgeData {
             tags = listOf("东山岛", "海岛", "福建"),
             sourceTitle = "搜狐东山岛错峰游文章",
             sourceUrl = "https://www.sohu.com/a/942654778_121124418",
-            imageUrl = "https://q5.itc.cn/q_70/images03/20251010/19b4f2ddb40e469c9ac32a6027b35ddb.jpeg",
             body = "这条使用具体文章页和真实配图，用于补充旅行类资料的数量差异，避免每个主题都是一样的 10 篇。",
+            imageResName = "article_travel_013_dongshan",
             dayOffset = 45,
         ),
 
@@ -561,8 +565,8 @@ object SampleKnowledgeData {
             tags = listOf("Obsidian", "Markdown", "知识库"),
             sourceTitle = "少数派 Obsidian 中文内容合集",
             sourceUrl = "https://sspai.com/post/68427",
-            imageUrl = "https://rssfile.sspai.com/article/17c91241-3463-8797-9b63-d9d955678dac.png?imageMogr2/auto-orient/ignore-error/1",
             body = "这条资料用于开源工具主题的入口卡。图片来自少数派文章元数据，适合展示工具资料也可以有真实文章配图。",
+            imageResName = "article_tool_001_obsidian_collection",
             dayOffset = 46,
         ),
         demoItem(
@@ -573,8 +577,8 @@ object SampleKnowledgeData {
             tags = listOf("Obsidian", "入门", "插件"),
             sourceTitle = "少数派 Obsidian 入门指南",
             sourceUrl = "https://sspai.com/post/96057",
-            imageUrl = "https://rssfile.sspai.com/2025/02/05/a782845a5617eb16cd4064a37f40708d.png?imageMogr2/auto-orient/ignore-error/1",
             body = "这条与上一条同属 Obsidian，但用途不同：一个是内容合集，一个是入门路径，适合用标签区分。",
+            imageResName = "article_tool_002_obsidian_2025",
             dayOffset = 47,
         ),
         demoItem(
@@ -585,7 +589,8 @@ object SampleKnowledgeData {
             tags = listOf("Logseq", "大纲", "开源"),
             sourceTitle = "少数派 Logseq 使用心得",
             sourceUrl = "https://sspai.com/post/87751",
-            body = "这条作为纯文本工具资料。重点是说明 Logseq 与 Obsidian 的组织方式不同，前者更强调块和日记流。",
+            body = "这条工具资料使用来源文章配图。重点是说明 Logseq 与 Obsidian 的组织方式不同，前者更强调块和日记流。",
+            imageResName = "article_tool_003_logseq",
             dayOffset = 48,
         ),
         demoItem(
@@ -596,7 +601,8 @@ object SampleKnowledgeData {
             tags = listOf("Zotero", "文献管理", "PDF"),
             sourceTitle = "少数派 Zotero 文章",
             sourceUrl = "https://sspai.com/post/72163",
-            body = "这条用于说明工具资料不一定都来自项目官网，中文评测文章也可以作为资料来源。",
+            body = "这条用于说明工具资料不一定都来自项目官网，中文评测文章也可以作为资料来源；配图使用来源文章图片的本地缓存。",
+            imageResName = "article_tool_004_zotero",
             dayOffset = 49,
         ),
         demoItem(
@@ -607,8 +613,8 @@ object SampleKnowledgeData {
             tags = listOf("Omnivore", "稍后读", "开源"),
             sourceTitle = "少数派《稍后阅读开源神器 Omnivore 退场之后》",
             sourceUrl = "https://sspai.com/post/93702",
-            imageUrl = "https://rssfile.sspai.com/2024/11/07/77bd70d5792380e1fabc8b5f4dcf6dd1.jpg?imageMogr2/auto-orient/ignore-error/1",
             body = "这条中文文章从 Omnivore 停服切入，适合说明稍后读工具的数据迁移和长期保存问题。配图来自来源页元数据。",
+            imageResName = "article_tool_005_omnivore",
             dayOffset = 50,
         ),
         demoItem(
@@ -630,8 +636,8 @@ object SampleKnowledgeData {
             tags = listOf("Excalidraw", "白板", "图解"),
             sourceTitle = "少数派 Handraw / Excalidraw 中文文章",
             sourceUrl = "https://sspai.com/post/80459",
-            imageUrl = "https://rssfile.sspai.com/2023/06/20/59629fb16af577c739da235ead8c1ace.png?imageMogr2/auto-orient/ignore-error/1",
             body = "这条中文文章介绍支持中文手写效果的 Excalidraw 方案。配图来自少数派文章元数据。",
+            imageResName = "article_tool_007_excalidraw",
             dayOffset = 52,
         ),
         demoItem(
@@ -666,8 +672,8 @@ object SampleKnowledgeData {
             tags = listOf("PARA", "分类", "知识管理"),
             sourceTitle = "Guoxudong.io PARA 方法论文章",
             sourceUrl = "https://guoxudong.io/post/2024-06-03-para/",
-            imageUrl = "https://cdn.suuny0826.com/image/PARA%20%E6%96%B9%E6%B3%95%E8%AE%BA.png",
             body = "这篇中文文章适合作为 PARA 方法入口。演示摘要强调 PARA 的价值不是建立完美分类，而是让资料服务当前行动。",
+            imageResName = "article_km_001_para_guoxudong",
             dayOffset = 55,
         ),
         demoItem(
@@ -689,7 +695,8 @@ object SampleKnowledgeData {
             tags = listOf("渐进式摘要", "高亮", "复用"),
             sourceTitle = "少数派 Obsidian 渐进式总结文章",
             sourceUrl = "https://sspai.com/post/69025",
-            body = "这条中文文章介绍如何用渐进式总结笔记，把知识交给未来的自己。没有可靠配图时保持文本卡。",
+            body = "这条中文文章介绍如何用渐进式总结笔记，把知识交给未来的自己；来源配图已缓存为本地演示资源。",
+            imageResName = "article_km_003_progressive_summarization",
             dayOffset = 57,
         ),
         demoItem(
@@ -744,7 +751,8 @@ object SampleKnowledgeData {
             tags = listOf("Markdown", "开放格式", "迁移"),
             sourceTitle = "少数派 Markdown 使用详解",
             sourceUrl = "https://sspai.com/post/91506",
-            body = "这条中文文章用于说明 Markdown 为什么适合作为长期知识库的开放文本格式。没有可靠配图时保持文本卡。",
+            body = "这条中文文章用于说明 Markdown 为什么适合作为长期知识库的开放文本格式；来源配图已缓存到本地。",
+            imageResName = "article_km_008_markdown_export",
             dayOffset = 62,
         ),
         demoItem(
@@ -755,8 +763,8 @@ object SampleKnowledgeData {
             tags = listOf("来源", "复核", "AI 摘要"),
             sourceTitle = "优设网标签体系设计文章",
             sourceUrl = "https://www.uisdc.com/tag-design-3",
-            imageUrl = "https://image.uisdc.com/wp-content/uploads/2024/04/ysbanner-202300411-1.jpg",
             body = "这条中文文章用于提醒资料应用不要把摘要当成事实本身，也要用标签帮助用户复核和筛选。",
+            imageResName = "article_km_009_source_trace",
             dayOffset = 63,
         ),
         demoItem(
@@ -814,7 +822,7 @@ object SampleKnowledgeData {
         sourceUrl: String,
         body: String,
         dayOffset: Int,
-        imageUrl: String? = null,
+        imageResName: String? = null,
     ): KnowledgeItem = KnowledgeItem(
         id = "demo-$id",
         topicId = topicId,
@@ -825,13 +833,13 @@ object SampleKnowledgeData {
             appendLine("标签：${tags.joinToString(" · ")}")
             appendLine("来源：$sourceTitle")
             appendLine("原文：$sourceUrl")
-            imageUrl?.let { appendLine("配图：$it") }
+            imageResName?.let { appendLine("本地配图：$it") }
             appendLine("采集时间：2026-06-${(28 - dayOffset % 20).toString().padStart(2, '0')}")
             appendLine()
             appendLine(body)
         },
         sourceUrl = sourceUrl,
-        imageUrl = imageUrl,
+        imageResName = imageResName,
         createdAtEpochMillis = BASE_TIME - dayOffset * DAY_MILLIS,
     )
 

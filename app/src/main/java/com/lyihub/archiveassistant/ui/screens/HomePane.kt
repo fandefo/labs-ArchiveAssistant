@@ -622,7 +622,7 @@ private fun MinistryStampStack(
                                 fontSize = headerFontSize,
                             ),
                         ) {
-                            append("「尚书省」")
+                            append("尚书省")
                         }
                         withStyle(
                             SpanStyle(

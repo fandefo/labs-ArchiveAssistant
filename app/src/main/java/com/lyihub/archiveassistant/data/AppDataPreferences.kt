@@ -63,7 +63,7 @@ object AppDataPreferences {
                     summary = obj.optString("summary", ""),
                     fullText = obj.optString("fullText", ""),
                     sourceUrl = obj.optString("sourceUrl", "").takeIf { it.isNotEmpty() },
-                    imageUrl = obj.optString("imageUrl", "").takeIf { it.isNotEmpty() },
+                    imageResName = obj.optString("imageResName", "").takeIf { it.isNotEmpty() },
                     documentFormat = obj.optString("documentFormat", "").takeIf { it.isNotEmpty() }
                         ?.let { runCatching { DocumentFormat.valueOf(it) }.getOrNull() },
                     fileName = obj.optString("fileName", "").takeIf { it.isNotEmpty() },
@@ -87,7 +87,7 @@ object AppDataPreferences {
                 put("summary", item.summary)
                 put("fullText", item.fullText)
                 item.sourceUrl?.let { put("sourceUrl", it) }
-                item.imageUrl?.let { put("imageUrl", it) }
+                item.imageResName?.let { put("imageResName", it) }
                 item.documentFormat?.let { put("documentFormat", it.name) }
                 item.fileName?.let { put("fileName", it) }
                 item.fileSize?.let { put("fileSize", it) }

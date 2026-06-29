@@ -70,7 +70,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.lyihub.archiveassistant.R
 import androidx.core.content.FileProvider
 import com.lyihub.archiveassistant.domain.ContentType
@@ -346,7 +345,7 @@ private fun estimateArticleHeight(item: KnowledgeItem): Float {
     val textWeight = 1f +
         (item.title.length / 18f).coerceAtMost(2.2f) +
         (item.summary.ifBlank { item.fullText }.length / 72f).coerceAtMost(3.6f)
-    val imageWeight = if (item.imageUrl != null) 1.45f / articleImageAspectRatio(item).coerceAtLeast(0.58f) else 0f
+    val imageWeight = if (item.imageResName != null) 1.45f / articleImageAspectRatio(item).coerceAtLeast(0.58f) else 0f
     return textWeight + imageWeight
 }
 
@@ -386,8 +385,7 @@ private fun MemorialArticleCard(
     val cardShape = RoundedCornerShape(DetailCardCorner)
     val imageShape = RoundedCornerShape(DetailCardCorner)
     val tags = articleTags(item)
-    val imageUrl = item.imageUrl
-    var showRemoteImage by remember(imageUrl) { mutableStateOf(imageUrl != null) }
+    val imageResId = localArticleImageResId(item.imageResName)
     Box(
         modifier = modifier
             .shadow(8.dp, cardShape, clip = false)
@@ -413,7 +411,7 @@ private fun MemorialArticleCard(
                 .padding(7.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            if (imageUrl != null && showRemoteImage) {
+            if (imageResId != null) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -421,15 +419,14 @@ private fun MemorialArticleCard(
                         .background(Color.White, imageShape)
                         .padding(5.dp),
                 ) {
-                    AsyncImage(
-                        model = imageUrl,
+                    Image(
+                        painter = painterResource(id = imageResId),
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(articleImageAspectRatio(item))
                             .clip(imageShape),
                         contentScale = ContentScale.Crop,
-                        onError = { showRemoteImage = false },
                     )
                 }
             }
@@ -461,6 +458,16 @@ private fun MemorialArticleCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun localArticleImageResId(imageResName: String?): Int? {
+    val context = LocalContext.current
+    return remember(imageResName, context) {
+        imageResName
+            ?.let { context.resources.getIdentifier(it, "drawable", context.packageName) }
+            ?.takeIf { it != 0 }
     }
 }
 

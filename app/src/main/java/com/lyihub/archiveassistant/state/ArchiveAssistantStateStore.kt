@@ -141,7 +141,11 @@ class ArchiveAssistantStateStore(
         val looksLikeOldDemoData = persistedTopics.map { it.id }.toSet().containsAll(oldDemoTopicIds) &&
             persistedTopics.size <= oldDemoTopicIds.size &&
             persistedItems.size <= 8
-        return looksLikeOldDemoData
+        val looksLikeCurrentDemoData = persistedTopics.map { it.id }.toSet()
+            .containsAll(SampleKnowledgeData.topics.map { it.id }) &&
+            persistedItems.isNotEmpty() &&
+            persistedItems.all { it.id.startsWith("demo-") }
+        return looksLikeOldDemoData || looksLikeCurrentDemoData
     }
 
     private fun saveData() {

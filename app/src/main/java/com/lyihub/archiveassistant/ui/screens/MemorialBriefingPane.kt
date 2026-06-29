@@ -45,8 +45,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -178,8 +178,8 @@ private fun MemorialCoverWheel(
         val wheelCenterX = maxWidth + 58.dp
         val centerY = maxHeight * 0.67f
         val cardWidth = 72.dp
-        val pendingStampHeight = 142.dp
-        val pendingStampWidth = 58.dp
+        val pendingStampHeight = 186.dp
+        val pendingStampWidth = 66.dp
         val startDegrees = MemorialActiveSlotDegrees + animatedWheelRotation
 
         MemorialWheelInnerDisc(
@@ -241,14 +241,15 @@ private fun PendingVerticalNote(
             contentScale = ContentScale.FillBounds,
         )
         Text(
-            text = "朕\n阅\n中",
+            text = "待\n批\n奏\n章",
             style = MaterialTheme.typography.headlineLarge.copy(fontFamily = ImperialStampFont),
             color = Color.White,
             textAlign = TextAlign.Center,
-            lineHeight = 28.sp,
+            lineHeight = 31.sp,
             modifier = Modifier
                 .align(Alignment.Center)
-                .width(30.dp),
+                .width(34.dp)
+                .padding(horizontal = 1.dp, vertical = 2.dp),
         )
     }
 }
