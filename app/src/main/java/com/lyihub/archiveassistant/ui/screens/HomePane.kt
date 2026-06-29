@@ -25,7 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,7 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -58,6 +56,7 @@ import com.lyihub.archiveassistant.ui.theme.ImperialCinnabar
 import com.lyihub.archiveassistant.ui.theme.ImperialDisplayFont
 import com.lyihub.archiveassistant.ui.theme.ImperialIvory
 import com.lyihub.archiveassistant.ui.theme.ImperialStampTitleFont
+import com.lyihub.archiveassistant.ui.theme.ImperialTitleFont
 import com.lyihub.archiveassistant.ui.theme.ImperialUmber
 
 private val HomeInk = ImperialUmber
@@ -327,8 +326,11 @@ private fun HomeFeatureCell(
       Text(
         text = title,
         style =
-          if (large) MaterialTheme.typography.headlineMedium
-          else MaterialTheme.typography.titleLarge,
+          if (large) {
+            MaterialTheme.typography.headlineMedium.copy(fontFamily = ImperialTitleFont)
+          } else {
+            MaterialTheme.typography.titleLarge.copy(fontFamily = ImperialTitleFont)
+          },
         color = contentColor,
         fontWeight = FontWeight.Normal,
         maxLines = if (large) 2 else 1,
@@ -336,7 +338,11 @@ private fun HomeFeatureCell(
       Text(
         text = subtitle,
         style =
-          if (large) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall,
+          if (large) {
+            MaterialTheme.typography.bodyMedium.copy(fontFamily = ImperialDisplayFont)
+          } else {
+            MaterialTheme.typography.bodySmall.copy(fontFamily = ImperialDisplayFont)
+          },
         color = contentColor.copy(alpha = 0.76f),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
@@ -378,7 +384,7 @@ private fun PalaceDashboardBlock(
             title = "中书录入",
             subtitle = "拾取、摘要、拟题",
             contentColor = Color.White,
-            ornamentRes = R.drawable.imperial_ornament_lantern,
+            ornamentRes = R.drawable.home_ornament_zhongshu,
             tileVisual = ZhongshuTileVisual,
             modifier = Modifier.weight(1f),
             onClick = {},
@@ -389,7 +395,7 @@ private fun PalaceDashboardBlock(
             title = "门下递奏",
             subtitle = "筛选、预览、待批",
             contentColor = Color.White,
-            ornamentRes = R.drawable.imperial_ornament_ruyi,
+            ornamentRes = R.drawable.home_ornament_menxia,
             tileVisual = MenxiaTileVisual,
             modifier = Modifier.weight(1f),
             onClick = {},
@@ -411,7 +417,7 @@ private fun PalaceDashboardBlock(
           title = "宣拾遗",
           subtitle = "读取剪切板",
           contentColor = Color.White,
-          ornamentRes = R.drawable.imperial_ornament_gourd,
+          ornamentRes = R.drawable.home_ornament_clipboard,
           tileVisual = ClipboardTileVisual,
           modifier = Modifier.weight(1f).height(searchRowHeight),
           onClick = onOpenClipboard,
@@ -442,32 +448,31 @@ private fun SearchCell(
     contentColor = Color.White,
     tileVisual = SearchTileVisual,
   ) {
+    HomeOrnament(
+      imageRes = R.drawable.home_ornament_library,
+      tint = Color.White,
+      modifier = Modifier.align(Alignment.CenterEnd).offset(x = 18.dp).size(112.dp),
+      alpha = 0.66f,
+    )
     Column(
       modifier = Modifier.fillMaxSize().padding(14.dp),
       verticalArrangement = Arrangement.SpaceBetween,
     ) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-      ) {
-        Text(
-          text = "藏经阁",
-          style = MaterialTheme.typography.titleLarge,
-          color = Color.White,
-          fontWeight = FontWeight.Normal,
-        )
-        Icon(
-          imageVector = Icons.Default.Search,
-          contentDescription = "搜索",
-          tint = Color.White.copy(alpha = 0.76f),
-        )
-      }
+      Text(
+        text = "藏经阁",
+        style = MaterialTheme.typography.titleLarge.copy(fontFamily = ImperialTitleFont),
+        color = Color.White,
+        fontWeight = FontWeight.Normal,
+      )
       BasicTextField(
         value = searchQuery,
         onValueChange = onSearchQueryChanged,
         singleLine = true,
-        textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+        textStyle =
+          MaterialTheme.typography.bodyMedium.copy(
+            color = Color.White,
+            fontFamily = ImperialDisplayFont,
+          ),
         modifier = Modifier.fillMaxWidth().testTag("home-search-input"),
         decorationBox = { innerTextField ->
           Box(
@@ -479,7 +484,7 @@ private fun SearchCell(
             if (searchQuery.isBlank()) {
               Text(
                 text = "查找主题或资料...",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = ImperialDisplayFont),
                 color = Color.White.copy(alpha = 0.62f),
               )
             }
@@ -521,22 +526,22 @@ private fun MemorialCell(
     tileVisual = MemorialTileVisual,
   ) {
     HomeOrnament(
-      imageRes = R.drawable.imperial_ornament_gate_guard,
+      imageRes = R.drawable.home_ornament_memorial,
       tint = Color.White,
       modifier = Modifier.align(Alignment.CenterEnd).offset(x = 24.dp).size(138.dp),
-      alpha = 0.48f,
+      alpha = 0.66f,
     )
     Column(modifier = Modifier.align(Alignment.BottomStart).padding(18.dp)) {
       Text(
         text = "批奏折",
-        style = MaterialTheme.typography.headlineLarge,
+        style = MaterialTheme.typography.headlineLarge.copy(fontFamily = ImperialTitleFont),
         color = Color.White,
         fontWeight = FontWeight.Normal,
         maxLines = 1,
       )
       Text(
         text = "今日 $pendingCount 封待批奏章",
-        style = MaterialTheme.typography.titleSmall,
+        style = MaterialTheme.typography.titleSmall.copy(fontFamily = ImperialDisplayFont),
         color = Color.White.copy(alpha = 0.76f),
         maxLines = 1,
       )
@@ -854,7 +859,6 @@ private fun HomeOrnament(
     contentDescription = null,
     modifier = modifier,
     contentScale = ContentScale.Fit,
-    colorFilter = ColorFilter.tint(tint.copy(alpha = 0.92f)),
     alpha = alpha,
   )
 }

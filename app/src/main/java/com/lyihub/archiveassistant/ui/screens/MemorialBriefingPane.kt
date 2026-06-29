@@ -210,8 +210,8 @@ private fun MemorialCoverWheel(
     val centerY = maxHeight * 0.67f
     val cardWidth = 72.dp
     val pendingStampLines = pendingStampLines(pendingCount)
-    val pendingStampHeight = 42.dp + 31.dp * pendingStampLines.size
-    val pendingStampWidth = 70.dp
+    val pendingStampHeight = 14.dp + 31.dp * pendingStampLines.size
+    val pendingStampWidth = 48.dp
     val startDegrees = MemorialActiveSlotDegrees + animatedWheelRotation
 
     MemorialWheelInnerDisc(
@@ -284,14 +284,27 @@ private fun PendingVerticalNote(
       textAlign = TextAlign.Center,
       lineHeight = 31.sp,
       modifier =
-        Modifier.align(Alignment.Center).width(38.dp).padding(horizontal = 1.dp, vertical = 3.dp),
+        Modifier.align(Alignment.Center).width(31.dp).padding(horizontal = 0.dp, vertical = 1.dp),
     )
   }
 }
 
 private fun pendingStampLines(pendingCount: Int): List<String> {
   val normalizedCount = pendingCount.coerceAtLeast(0)
-  return "待批${normalizedCount}封".map { it.toString() }
+  return "待批${normalizedCount.toChineseNumeral()}封".map { it.toString() }
+}
+
+private fun Int.toChineseNumeral(): String {
+  if (this == 0) return "零"
+  val digits = listOf("零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖")
+  if (this < 10) return digits[this]
+  if (this < 20) return "拾" + if (this % 10 == 0) "" else digits[this % 10]
+  if (this < 100) {
+    val tens = this / 10
+    val ones = this % 10
+    return digits[tens] + "拾" + if (ones == 0) "" else digits[ones]
+  }
+  return toString().map { digits[it.digitToInt()] }.joinToString("")
 }
 
 private data class WheelItemPlacement(

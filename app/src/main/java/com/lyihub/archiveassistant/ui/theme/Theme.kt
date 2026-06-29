@@ -83,7 +83,7 @@ fun ArchiveAssistantTheme(
   if (!view.isInEditMode) {
     SideEffect {
       val activity = view.context as? ComponentActivity ?: return@SideEffect
-      val systemBarColor = colorScheme.background.toArgb()
+      val systemBarColor = ImperialIvory.toArgb()
       val systemBarStyle =
         if (darkTheme) {
           SystemBarStyle.dark(systemBarColor)

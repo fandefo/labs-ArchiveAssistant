@@ -58,31 +58,31 @@ private class FixedCutCornerShape(private val notchDp: Int) : Shape {
 internal val ZhongshuTileVisual =
   ArchiveTileVisual(
     backgroundRes = R.drawable.home_zhongshu_tile,
-    borderColor = Color(0xFF9C4A37),
+    borderColor = Color(0xFF175438),
   )
 
 internal val MenxiaTileVisual =
   ArchiveTileVisual(
     backgroundRes = R.drawable.home_menxia_tile,
-    borderColor = Color(0xFFDEC59E),
+    borderColor = Color(0xFF0E4F77),
   )
 
 internal val MemorialTileVisual =
   ArchiveTileVisual(
     backgroundRes = R.drawable.home_memorial_tile,
-    borderColor = Color(0xFFAFD9BD),
+    borderColor = Color(0xFF4D3D32),
   )
 
 internal val ClipboardTileVisual =
   ArchiveTileVisual(
     backgroundRes = R.drawable.home_clipboard_tile,
-    borderColor = Color(0xFF78ABCC),
+    borderColor = Color(0xFFCE4A00),
   )
 
 internal val SearchTileVisual =
   ArchiveTileVisual(
     backgroundRes = R.drawable.home_search_new_tile,
-    borderColor = Color(0xFF3E3E46),
+    borderColor = Color(0xFF129166),
   )
 
 internal val HomeTileVisuals =
