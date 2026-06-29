@@ -312,8 +312,6 @@ private fun HomeFeatureCell(
   textAlignment: Alignment = Alignment.BottomStart,
   pulseActive: Boolean = false,
   workLightColor: Color? = null,
-  workLightAlignment: Alignment = Alignment.TopStart,
-  workStatusAlignment: Alignment = Alignment.BottomStart,
 ) {
   val workProgress by
     animateFloatAsState(
@@ -439,17 +437,10 @@ private fun HomeFeatureCell(
             progress = workProgress,
             color = workLightColor,
             contentColor = contentColor,
-            modifier = Modifier.align(workStatusAlignment).offset(y = statusOffsetY),
+            modifier = Modifier.align(Alignment.BottomCenter).offset(y = statusOffsetY),
           )
         }
       }
-    }
-    if (workLightColor != null) {
-      WorkBreathingLight(
-        active = pulseActive,
-        color = workLightColor,
-        modifier = Modifier.align(workLightAlignment).padding(5.dp),
-      )
     }
   }
 }
@@ -508,9 +499,8 @@ private fun WorkStatusLine(
     modifier =
       modifier
         .graphicsLayer { alpha = progress }
-        .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(999.dp))
-        .border(0.7.dp, color.copy(alpha = 0.44f), RoundedCornerShape(999.dp))
-        .padding(start = 4.dp, top = 3.dp, end = 10.dp, bottom = 3.dp),
+        .padding(start = 4.dp, top = 3.dp, end = 4.dp, bottom = 6.dp),
+    horizontalArrangement = Arrangement.Center,
     verticalAlignment = Alignment.CenterVertically,
   ) {
     WorkBreathingLight(
@@ -621,7 +611,7 @@ private fun TilePulseWave(
   Box(
     modifier =
       modifier.drawBehind {
-        val baseStroke = (size.minDimension * 0.026f).coerceIn(1.8f, 3.4f)
+        val baseStroke = (size.minDimension * 0.034f).coerceIn(2.4f, 4.8f)
         val cycleProgress = progress.value % 1f
         repeat(1) {
           val phase = cycleProgress
@@ -715,7 +705,6 @@ private fun PalaceDashboardBlock(
             ornamentTint = Color.White,
             pulseActive = pulseTarget == HomePulseTarget.Zhongshu,
             workLightColor = ZhongshuWorkLight,
-            workLightAlignment = Alignment.TopStart,
           )
           HomeFeatureCell(
             title = "门下递奏",
@@ -733,8 +722,6 @@ private fun PalaceDashboardBlock(
             textAlignment = Alignment.BottomEnd,
             pulseActive = pulseTarget == HomePulseTarget.Menxia,
             workLightColor = MenxiaWorkLight,
-            workLightAlignment = Alignment.TopEnd,
-            workStatusAlignment = Alignment.BottomEnd,
           )
         }
         MemorialCell(
