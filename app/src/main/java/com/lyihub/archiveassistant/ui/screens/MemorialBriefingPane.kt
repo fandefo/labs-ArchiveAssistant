@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -555,15 +556,13 @@ private fun MemorialWheelCover(
     ) {
       Text(
         text = departmentTitle,
-        style = MaterialTheme.typography.titleSmall,
+        style = MaterialTheme.typography.labelLarge,
         color = MemorialInk.copy(alpha = lerpFloat(0.0f, 0.82f, focus)),
         fontWeight = FontWeight.Normal,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
         modifier =
           Modifier.align(Alignment.TopCenter)
-            .offset(y = (-24).dp)
-            .width(frameWidth + 12.dp)
+            .offset(y = (-21).dp)
+            .requiredWidth(frameWidth * 2.7f)
             .graphicsLayer { alpha = focus },
         textAlign = TextAlign.Center,
       )
