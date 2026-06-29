@@ -612,32 +612,33 @@ private fun MinistryStampStack(
                     .padding(start = 16.dp, top = 14.dp, end = 10.dp, bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                val headerStyle = MaterialTheme.typography.titleMedium
                 Text(
                     text = buildAnnotatedString {
-                        val headerFontSize = MaterialTheme.typography.titleMedium.fontSize
                         withStyle(
                             SpanStyle(
                                 color = ImperialCinnabar,
                                 fontFamily = ImperialStampTitleFont,
-                                fontSize = headerFontSize,
+                                fontSize = headerStyle.fontSize,
                             ),
                         ) {
-                            append("尚书省")
+                            append("「尚书省」")
                         }
                         withStyle(
                             SpanStyle(
                                 color = Color.Black,
                                 fontFamily = ImperialDisplayFont,
-                                fontSize = headerFontSize,
+                                fontSize = headerStyle.fontSize,
                             ),
                         ) {
                             append(" · 最近主题")
                         }
                     },
-                    style = MaterialTheme.typography.titleMedium,
+                    style = headerStyle,
                     fontWeight = FontWeight.Normal,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    lineHeight = headerStyle.lineHeight,
                     modifier = Modifier.weight(1f),
                 )
                 MinistryHeaderAction(

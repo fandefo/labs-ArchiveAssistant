@@ -2,7 +2,7 @@ package com.lyihub.archiveassistant.domain
 
 object SampleKnowledgeData {
     const val DefaultTopicId = "topic-ai-architecture"
-    const val DemoDataVersion = 4
+    const val DemoDataVersion = 5
 
     val topics: List<Topic> = listOf(
         demoTopic(DefaultTopicId, "大模型架构研究", "#B83E2F", 0),
@@ -843,6 +843,6 @@ object SampleKnowledgeData {
         createdAtEpochMillis = BASE_TIME - dayOffset * DAY_MILLIS,
     )
 
-    private const val BASE_TIME = 1_719_532_800_000L
+    private const val BASE_TIME = 1_782_700_177_000L
     private const val DAY_MILLIS = 86_400_000L
 }

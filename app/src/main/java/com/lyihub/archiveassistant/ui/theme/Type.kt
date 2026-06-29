@@ -8,6 +8,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.lyihub.archiveassistant.R
 
+val ImperialTitleFont = FontFamily(
+    Font(R.font.san_ji_xing_kai_jian_ti_cu, FontWeight.Normal),
+)
+
 val ImperialDisplayFont = FontFamily(
     Font(R.font.dinglie_song_typeface, FontWeight.Normal),
 )
@@ -20,109 +24,109 @@ val ImperialStampFont = FontFamily(
     Font(R.font.ling_dong_qi_che_chun_tang, FontWeight.Normal),
 )
 
-val ImperialStampTitleFont = ImperialStampFont
+val ImperialStampTitleFont = ImperialTitleFont
 
 val Typography = Typography(
     displayLarge = TextStyle(
-        fontFamily = ImperialDisplayFont,
+        fontFamily = ImperialTitleFont,
         fontWeight = FontWeight.Normal,
         fontSize = 42.sp,
         lineHeight = 50.sp,
         letterSpacing = 0.sp
     ),
     displayMedium = TextStyle(
-        fontFamily = ImperialDisplayFont,
+        fontFamily = ImperialTitleFont,
         fontWeight = FontWeight.Normal,
         fontSize = 34.sp,
         lineHeight = 42.sp,
         letterSpacing = 0.sp
     ),
     displaySmall = TextStyle(
-        fontFamily = ImperialDisplayFont,
+        fontFamily = ImperialTitleFont,
         fontWeight = FontWeight.Normal,
         fontSize = 30.sp,
         lineHeight = 38.sp,
         letterSpacing = 0.sp
     ),
     headlineLarge = TextStyle(
-        fontFamily = ImperialDisplayFont,
+        fontFamily = ImperialTitleFont,
         fontWeight = FontWeight.Normal,
         fontSize = 27.sp,
         lineHeight = 35.sp,
         letterSpacing = 0.sp
     ),
     headlineMedium = TextStyle(
-        fontFamily = ImperialDisplayFont,
+        fontFamily = ImperialTitleFont,
         fontWeight = FontWeight.Normal,
         fontSize = 23.sp,
         lineHeight = 31.sp,
         letterSpacing = 0.sp
     ),
     headlineSmall = TextStyle(
-        fontFamily = ImperialDisplayFont,
+        fontFamily = ImperialTitleFont,
         fontWeight = FontWeight.Normal,
         fontSize = 21.sp,
         lineHeight = 29.sp,
         letterSpacing = 0.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = ImperialDisplayFont,
+        fontFamily = ImperialTitleFont,
         fontWeight = FontWeight.Normal,
         fontSize = 21.sp,
         lineHeight = 29.sp,
         letterSpacing = 0.sp
     ),
     titleMedium = TextStyle(
-        fontFamily = ImperialDisplayFont,
+        fontFamily = ImperialTitleFont,
         fontWeight = FontWeight.Normal,
         fontSize = 18.sp,
         lineHeight = 26.sp,
         letterSpacing = 0.sp
     ),
     titleSmall = TextStyle(
-        fontFamily = ImperialDisplayFont,
+        fontFamily = ImperialTitleFont,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 22.sp,
         letterSpacing = 0.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = ImperialTextFont,
+        fontFamily = ImperialDisplayFont,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = ImperialTextFont,
+        fontFamily = ImperialDisplayFont,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.sp
     ),
     bodySmall = TextStyle(
-        fontFamily = ImperialTextFont,
+        fontFamily = ImperialDisplayFont,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.sp
     ),
     labelLarge = TextStyle(
-        fontFamily = ImperialTextFont,
+        fontFamily = ImperialDisplayFont,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = ImperialTextFont,
+        fontFamily = ImperialDisplayFont,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = ImperialTextFont,
+        fontFamily = ImperialDisplayFont,
         fontWeight = FontWeight.Normal,
         fontSize = 11.sp,
         lineHeight = 16.sp,

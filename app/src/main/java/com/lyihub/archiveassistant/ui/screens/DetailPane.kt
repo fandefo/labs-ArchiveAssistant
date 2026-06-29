@@ -83,9 +83,9 @@ import com.lyihub.archiveassistant.ui.components.ArchiveDialogAction
 import com.lyihub.archiveassistant.ui.components.PaneContainer
 import com.lyihub.archiveassistant.ui.components.XuanPaperBackground
 import com.lyihub.archiveassistant.ui.theme.ImperialCinnabar
+import com.lyihub.archiveassistant.ui.theme.ImperialDisplayFont
 import com.lyihub.archiveassistant.ui.theme.ImperialIvory
 import com.lyihub.archiveassistant.ui.theme.ImperialParchment
-import com.lyihub.archiveassistant.ui.theme.ImperialTextFont
 import com.lyihub.archiveassistant.ui.theme.ImperialUmber
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -546,7 +546,7 @@ private fun ArticleTagChip(
         Text(
             text = text,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontFamily = ImperialTextFont,
+                fontFamily = ImperialDisplayFont,
                 fontSize = 10.sp,
                 lineHeight = 10.sp,
             ),

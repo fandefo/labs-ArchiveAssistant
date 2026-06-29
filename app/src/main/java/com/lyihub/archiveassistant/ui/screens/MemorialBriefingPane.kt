@@ -1,5 +1,10 @@
 package com.lyihub.archiveassistant.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
@@ -31,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -57,7 +63,8 @@ import com.lyihub.archiveassistant.ui.theme.ImperialBronze
 import com.lyihub.archiveassistant.ui.theme.ImperialCinnabar
 import com.lyihub.archiveassistant.ui.theme.ImperialIvory
 import com.lyihub.archiveassistant.ui.theme.ImperialParchment
-import com.lyihub.archiveassistant.ui.theme.ImperialStampFont
+import com.lyihub.archiveassistant.ui.theme.ImperialDisplayFont
+import com.lyihub.archiveassistant.ui.theme.ImperialStampTitleFont
 import com.lyihub.archiveassistant.ui.theme.ImperialUmber
 import kotlin.math.cos
 import kotlin.math.abs
@@ -75,7 +82,7 @@ private const val MemorialWheelActiveScale = 1.58f
 private const val MemorialWheelFocusHalfRangeDegrees = 24f
 private const val MemorialWheelCoverSeed = 20260627
 private const val MemorialWheelDuplicateGuard = 3
-private const val MemorialWheelAutoAdvanceMillis = 2800L
+private const val MemorialWheelAutoAdvanceMillis = 5000L
 private val MemorialInk = Color.Black
 
 private data class BriefingSample(
@@ -139,7 +146,7 @@ private fun MemorialCoverWheel(
     modifier: Modifier = Modifier,
 ) {
     var wheelRotation by remember { mutableFloatStateOf(0f) }
-    var dragSession by remember { mutableIntStateOf(0) }
+    var autoAdvanceEnabled by remember { mutableStateOf(true) }
     val stepDegrees = 360f / MemorialWheelItemCount
     val shuffledCoverResources = remember(coverResources) {
         buildWheelCoverSequence(
@@ -149,13 +156,15 @@ private fun MemorialCoverWheel(
         )
     }
     if (shuffledCoverResources.isEmpty()) return
-    LaunchedEffect(dragSession, stepDegrees) {
-        while (true) {
-            delay(MemorialWheelAutoAdvanceMillis)
-            val snappedRotation = (wheelRotation / stepDegrees).roundToInt() * stepDegrees
-            val nextRotation = snappedRotation - stepDegrees
-            wheelRotation = nextRotation
-            onActiveIndexChanged(activeWheelIndex(nextRotation, stepDegrees))
+    LaunchedEffect(autoAdvanceEnabled, stepDegrees) {
+        if (autoAdvanceEnabled) {
+            while (true) {
+                delay(MemorialWheelAutoAdvanceMillis)
+                val snappedRotation = (wheelRotation / stepDegrees).roundToInt() * stepDegrees
+                val nextRotation = snappedRotation - stepDegrees
+                wheelRotation = nextRotation
+                onActiveIndexChanged(activeWheelIndex(nextRotation, stepDegrees))
+            }
         }
     }
     val animatedWheelRotation by animateFloatAsState(
@@ -171,7 +180,7 @@ private fun MemorialCoverWheel(
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = {
-                        dragSession++
+                        autoAdvanceEnabled = false
                     },
                     onDrag = { change, dragAmount ->
                         change.consume()
@@ -183,20 +192,18 @@ private fun MemorialCoverWheel(
                         val snappedRotation = (wheelRotation / stepDegrees).roundToInt() * stepDegrees
                         wheelRotation = snappedRotation
                         onActiveIndexChanged(activeWheelIndex(snappedRotation, stepDegrees))
-                        dragSession++
                     },
                     onDragCancel = {
                         val snappedRotation = (wheelRotation / stepDegrees).roundToInt() * stepDegrees
                         wheelRotation = snappedRotation
                         onActiveIndexChanged(activeWheelIndex(snappedRotation, stepDegrees))
-                        dragSession++
                     },
                 )
             },
     ) {
         val panelMin = min(maxWidth.value, maxHeight.value).dp
         val radius = panelMin * 0.66f
-        val innerRadius = radius * 0.72f
+        val innerRadius = radius * 0.69f
         val wheelCenterX = maxWidth + 58.dp
         val centerY = maxHeight * 0.67f
         val cardWidth = 72.dp
@@ -209,7 +216,7 @@ private fun MemorialCoverWheel(
             centerX = wheelCenterX,
             centerY = centerY,
             radius = innerRadius,
-            contentOffsetX = -innerRadius * 0.7f,
+            contentOffsetX = -innerRadius * 0.63f,
             modifier = Modifier.fillMaxSize(),
         )
         PendingVerticalNote(
@@ -267,7 +274,7 @@ private fun PendingVerticalNote(
         )
         Text(
             text = lines.joinToString("\n"),
-            style = MaterialTheme.typography.headlineLarge.copy(fontFamily = ImperialStampFont),
+            style = MaterialTheme.typography.headlineLarge.copy(fontFamily = ImperialStampTitleFont),
             color = Color.White,
             textAlign = TextAlign.Center,
             lineHeight = 31.sp,
@@ -668,33 +675,44 @@ private fun MemorialBriefCard(
     sample: BriefingSample,
     modifier: Modifier = Modifier,
 ) {
-    MemorialFramedPaperPanel(
-        modifier = modifier.heightIn(min = 76.dp),
-        cornerSize = 12.dp,
-        contentPadding = 13.dp,
-    ) {
-        Column(
+    AnimatedContent(
+        targetState = sample,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(240)) togetherWith fadeOut(animationSpec = tween(180))
+        },
+        label = "memorialBriefCardContent",
+        modifier = modifier,
+    ) { activeSample ->
+        MemorialFramedPaperPanel(
             modifier = Modifier
-                .align(Alignment.CenterStart)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+                .fillMaxWidth()
+                .heightIn(min = 76.dp),
+            cornerSize = 12.dp,
+            contentPadding = 13.dp,
         ) {
-            Text(
-                text = sample.title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MemorialInk,
-                fontWeight = FontWeight.Normal,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = sample.body,
-                style = MaterialTheme.typography.bodySmall,
-                color = MemorialInk.copy(alpha = 0.78f),
-                lineHeight = 18.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Column(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = activeSample.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MemorialInk,
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = activeSample.body,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = ImperialDisplayFont),
+                    color = MemorialInk.copy(alpha = 0.78f),
+                    lineHeight = 18.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
