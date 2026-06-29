@@ -14,8 +14,6 @@ val ImperialDisplayFont = FontFamily(Font(R.font.dinglie_song_typeface, FontWeig
 
 val ImperialTextFont = FontFamily(Font(R.font.ma_shan_zheng_regular, FontWeight.Normal))
 
-val ImperialStampFont = FontFamily(Font(R.font.ling_dong_qi_che_chun_tang, FontWeight.Normal))
-
 val ImperialStampTitleFont = ImperialTitleFont
 
 val Typography =

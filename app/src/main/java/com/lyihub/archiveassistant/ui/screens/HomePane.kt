@@ -48,6 +48,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.lyihub.archiveassistant.R
 import com.lyihub.archiveassistant.domain.KnowledgeItem
@@ -97,7 +98,7 @@ fun HomePane(
   smartSummarizationMessage: String? = null,
   modifier: Modifier = Modifier,
 ) {
-  val pendingCount = pendingCount(recentTopics, itemsByTopic)
+  val pendingCount = TOTAL_PENDING_MEMORIALS
   val folders = dashboardFolders(recentTopics, itemsByTopic, searchQuery)
   var isManagingMinistries by remember { mutableStateOf(false) }
 
@@ -261,6 +262,9 @@ private fun HomeFeatureCell(
   modifier: Modifier = Modifier,
   enabled: Boolean = true,
   large: Boolean = false,
+  ornamentSize: Dp = if (large) 132.dp else 68.dp,
+  ornamentOffsetX: Dp = if (large) 22.dp else 10.dp,
+  ornamentOffsetY: Dp = 0.dp,
 ) {
   CutoutCell(
     modifier =
@@ -273,8 +277,8 @@ private fun HomeFeatureCell(
       tint = contentColor,
       modifier =
         Modifier.align(Alignment.CenterEnd)
-          .offset(x = if (large) 22.dp else 10.dp)
-          .size(if (large) 132.dp else 68.dp),
+          .offset(x = ornamentOffsetX, y = ornamentOffsetY)
+          .size(ornamentSize),
       alpha = if (large) 0.5f else 0.58f,
     )
     if (label.isNotBlank()) {
@@ -353,6 +357,8 @@ private fun PalaceDashboardBlock(
             onClick = {},
             testTag = "workflow-zhongshu-cell",
             enabled = false,
+            ornamentSize = 86.dp,
+            ornamentOffsetX = 20.dp,
           )
           HomeFeatureCell(
             title = "门下递奏",
@@ -364,6 +370,8 @@ private fun PalaceDashboardBlock(
             onClick = {},
             testTag = "workflow-menxia-cell",
             enabled = false,
+            ornamentSize = 88.dp,
+            ornamentOffsetX = 20.dp,
           )
         }
         MemorialCell(
@@ -380,11 +388,13 @@ private fun PalaceDashboardBlock(
           title = "宣拾遗",
           subtitle = "读取剪切板",
           contentColor = Color.White,
-          ornamentRes = R.drawable.home_ornament_clipboard,
+          ornamentRes = R.drawable.home_ornament_clipboard_sanxingdui,
           tileVisual = ClipboardTileVisual,
           modifier = Modifier.weight(1f).height(searchRowHeight),
           onClick = onOpenClipboard,
           testTag = "clipboard-button",
+          ornamentSize = 112.dp,
+          ornamentOffsetX = 24.dp,
         )
         SearchCell(
           searchQuery = searchQuery,
@@ -491,7 +501,7 @@ private fun MemorialCell(
     HomeOrnament(
       imageRes = R.drawable.home_ornament_memorial,
       tint = Color.White,
-      modifier = Modifier.align(Alignment.CenterEnd).offset(x = 24.dp).size(138.dp),
+      modifier = Modifier.align(Alignment.CenterEnd).offset(x = 24.dp, y = (-18).dp).size(138.dp),
       alpha = 0.66f,
     )
     Column(modifier = Modifier.align(Alignment.BottomStart).padding(18.dp)) {
@@ -528,7 +538,7 @@ private fun MinistryStampStack(
   Column(
     modifier =
       modifier
-        .shadow(11.dp, RoundedCornerShape(8.dp), clip = false)
+        .shadow(14.dp, RoundedCornerShape(8.dp), clip = false)
         .testTag("ministry-stamp-stack"),
     verticalArrangement = Arrangement.spacedBy(7.dp),
   ) {
@@ -550,7 +560,7 @@ private fun MinistryStampStack(
                 SpanStyle(
                   color = ImperialCinnabar,
                   fontFamily = headerFamily,
-                  fontSize = MaterialTheme.typography.headlineSmall.fontSize,
+                  fontSize = MaterialTheme.typography.headlineMedium.fontSize,
                 )
               ) {
                 append("「尚书省」")
@@ -559,7 +569,7 @@ private fun MinistryStampStack(
                 SpanStyle(
                   color = Color.Black,
                   fontFamily = headerFamily,
-                  fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                  fontSize = MaterialTheme.typography.titleSmall.fontSize,
                 )
               ) {
                 append("最近主题")
@@ -893,14 +903,6 @@ private class BoxScopeWithContentColor(
   private val boxScope: androidx.compose.foundation.layout.BoxScope,
   val contentColor: Color,
 ) : androidx.compose.foundation.layout.BoxScope by boxScope
-
-private fun pendingCount(
-  topics: List<Topic>,
-  itemsByTopic: Map<String, List<KnowledgeItem>>,
-): Int =
-  topics.take(3).sumOf { topic ->
-    ((itemsByTopic[topic.id]?.size ?: 0) + topic.title.length) % 3
-  }
 
 private fun dashboardFolders(
   topics: List<Topic>,

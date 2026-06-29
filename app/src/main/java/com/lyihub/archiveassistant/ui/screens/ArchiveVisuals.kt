@@ -29,7 +29,7 @@ internal data class ArchiveTileVisual(
   val borderColor: Color,
 )
 
-internal val ArchiveCutCornerShape: Shape = FixedCutCornerShape(10)
+internal val ArchiveCutCornerShape: Shape = FixedCutCornerShape(8)
 
 private class FixedCutCornerShape(private val notchDp: Int) : Shape {
   override fun createOutline(
@@ -58,31 +58,31 @@ private class FixedCutCornerShape(private val notchDp: Int) : Shape {
 internal val ZhongshuTileVisual =
   ArchiveTileVisual(
     backgroundRes = R.drawable.home_zhongshu_tile,
-    borderColor = Color(0xFF175438),
+    borderColor = Color(0xFF9C4A37),
   )
 
 internal val MenxiaTileVisual =
   ArchiveTileVisual(
     backgroundRes = R.drawable.home_menxia_tile,
-    borderColor = Color(0xFF0E4F77),
+    borderColor = Color(0xFFDEC59E),
   )
 
 internal val MemorialTileVisual =
   ArchiveTileVisual(
     backgroundRes = R.drawable.home_memorial_tile,
-    borderColor = Color(0xFF4D3D32),
+    borderColor = Color(0xFFAFD9BD),
   )
 
 internal val ClipboardTileVisual =
   ArchiveTileVisual(
     backgroundRes = R.drawable.home_clipboard_tile,
-    borderColor = Color(0xFFCE4A00),
+    borderColor = Color(0xFF78ABCC),
   )
 
 internal val SearchTileVisual =
   ArchiveTileVisual(
     backgroundRes = R.drawable.home_search_new_tile,
-    borderColor = Color(0xFF129166),
+    borderColor = Color(0xFF3E3E46),
   )
 
 internal val HomeTileVisuals =

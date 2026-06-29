@@ -16,7 +16,7 @@ internal class MemorialPaints(
   val background =
     Paint().apply {
       style = Paint.Style.FILL
-      color = APP_XUAN_PAPER_BASE
+      color = APP_BACKGROUND_BASE
     }
 
   val article =

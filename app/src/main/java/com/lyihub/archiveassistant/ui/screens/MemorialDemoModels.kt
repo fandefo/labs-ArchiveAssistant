@@ -13,12 +13,8 @@ internal enum class MemorialPageType {
 internal data class MemorialPage(
   val type: MemorialPageType,
   val pageNumber: String,
-)
-
-internal data class DirectoryItem(
-  val title: String,
-  val meta: String,
-  val excerpt: String,
+  val dossierIndex: Int = 0,
+  val bodySegmentIndex: Int = 0,
 )
 
 internal data class ArticleLayout(
@@ -74,6 +70,7 @@ internal enum class CoverVerdictMotion {
 }
 
 internal val STAMP_RED: Int = AndroidColor.rgb(178, 37, 31)
+internal val APP_BACKGROUND_BASE: Int = AndroidColor.rgb(252, 251, 246)
 internal val APP_XUAN_PAPER_BASE: Int = AndroidColor.rgb(252, 251, 246)
 internal val STAMP_PAPER: Int = AndroidColor.rgb(247, 240, 219)
 internal val IMPERIAL_GOLD: Int = AndroidColor.rgb(166, 126, 45)
@@ -89,6 +86,15 @@ internal data class PendingMemorialSummary(
   val title: String,
   val source: String,
   val summary: String,
+)
+
+internal data class PendingMemorialDossier(
+  val title: String,
+  val source: String,
+  val summary: String,
+  val body: String,
+  val tags: List<String>,
+  val createdAtEpochMillis: Long,
 )
 
 internal val pendingMemorialSummaries: List<PendingMemorialSummary> =
@@ -125,30 +131,78 @@ internal val pendingMemorialSummaries: List<PendingMemorialSummary> =
     ),
   )
 
-internal val memorialPages: List<MemorialPage> =
-  listOf(
-    MemorialPage(MemorialPageType.Cover, "壹"),
-    MemorialPage(MemorialPageType.Directory, "贰"),
-    MemorialPage(MemorialPageType.BodyLeft, "叁"),
-    MemorialPage(MemorialPageType.BodyRight, "肆"),
-    MemorialPage(MemorialPageType.End, "终"),
-  )
+internal fun buildMemorialPagesForDossier(
+  dossierIndex: Int,
+  dossier: PendingMemorialDossier,
+): List<MemorialPage> {
+  val bodySegments = splitMemorialBody(dossier.body)
+  return buildList {
+    add(MemorialPage(MemorialPageType.Cover, pageNumeral(size + 1), dossierIndex))
+    add(MemorialPage(MemorialPageType.Directory, pageNumeral(size + 1), dossierIndex))
+    bodySegments.forEachIndexed { segmentIndex, _ ->
+      add(
+        MemorialPage(
+          type =
+            if (segmentIndex % 2 == 0) {
+              MemorialPageType.BodyLeft
+            } else {
+              MemorialPageType.BodyRight
+            },
+          pageNumber = pageNumeral(size + 1),
+          dossierIndex = dossierIndex,
+          bodySegmentIndex = segmentIndex,
+        )
+      )
+    }
+    add(MemorialPage(MemorialPageType.End, "终", dossierIndex))
+  }
+}
 
-internal val directoryItems: List<DirectoryItem> =
-  listOf(
-    DirectoryItem(
-      title = "江南水患赈灾折",
-      meta = "工部侍郎 · 三日前",
-      excerpt = "臣谨奏：今岁江南秋雨连绵，淮水泛溢，下河州县多被淹没，灾民数十万，恳请拨银五十万两赈济...",
-    ),
-    DirectoryItem(
-      title = "西北边务军情折",
-      meta = "兵部尚书 · 五日前",
-      excerpt = "臣叩首谨奏：准甘陕总督急报，准噶尔部异动频繁，嘉峪关外三十里发现游骑，请旨定夺...",
-    ),
-    DirectoryItem(
-      title = "漕运改海折",
-      meta = "漕运总督 · 七日前",
-      excerpt = "臣稽首上言：运河年久淤塞，漕船阻滞，请酌量改行海运，以通南北之货，利国便民...",
-    ),
-  )
+internal val fallbackPendingMemorialDossiers: List<PendingMemorialDossier> =
+  pendingMemorialSummaries.mapIndexed { index, summary ->
+    PendingMemorialDossier(
+      title = summary.title,
+      source = summary.source,
+      summary = summary.summary,
+      body =
+        "标题：${summary.title}\n\n${summary.summary}\n\n此为待批奏章演示正文，用于展示封面堆叠、横向翻阅、批复与退朝流程。第${index + 1}封奏章在演示中保持固定顺序，便于核对批阅数量与阅读分页。",
+      tags = listOf("待批", "演示"),
+      createdAtEpochMillis = 1_782_700_177_000L - index * 86_400_000L,
+    )
+  }
+
+internal fun splitMemorialBody(body: String): List<String> {
+  val normalized =
+    body
+      .lineSequence()
+      .map { it.trim() }
+      .filter { it.isNotEmpty() }
+      .joinToString("\n\n")
+      .ifBlank { "此奏章暂无正文。" }
+  val maxSegmentLength = 420
+  val segments = mutableListOf<String>()
+  var remaining = normalized
+  while (remaining.length > maxSegmentLength) {
+    val splitAt =
+      remaining.lastIndexOf('\n', startIndex = maxSegmentLength).takeIf {
+        it >= maxSegmentLength * 0.45f
+      }
+        ?: remaining.lastIndexOf('。', startIndex = maxSegmentLength).takeIf {
+          it >= maxSegmentLength * 0.45f
+        }
+        ?: maxSegmentLength
+    segments += remaining.substring(0, splitAt + 1).trim()
+    remaining = remaining.substring(splitAt + 1).trim()
+  }
+  if (remaining.isNotBlank()) segments += remaining
+  return segments.ifEmpty { listOf("此奏章暂无正文。") }
+}
+
+private fun pageNumeral(number: Int): String {
+  val numerals = listOf("零", "壹", "贰", "叁", "肆", "伍", "陆", "柒", "捌", "玖", "拾")
+  return when {
+    number in numerals.indices -> numerals[number]
+    number < 20 -> "拾${numerals[number % 10]}"
+    else -> number.toString()
+  }
+}

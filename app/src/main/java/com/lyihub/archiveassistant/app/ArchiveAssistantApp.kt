@@ -48,6 +48,7 @@ import com.lyihub.archiveassistant.ui.screens.ManagePane
 import com.lyihub.archiveassistant.ui.screens.MemorialBriefingPane
 import com.lyihub.archiveassistant.ui.screens.MemorialDemoOverlay
 import com.lyihub.archiveassistant.ui.screens.SettingsPane
+import com.lyihub.archiveassistant.ui.screens.TOTAL_PENDING_MEMORIALS
 import com.lyihub.archiveassistant.ui.screens.TopicManagementDialogs
 import com.lyihub.archiveassistant.ui.theme.ImperialIvory
 import kotlinx.coroutines.launch
@@ -255,7 +256,10 @@ fun ArchiveAssistantApp(
     }
 
     if (showMemorialDemo.value) {
-      MemorialDemoOverlay(onDismiss = { showMemorialDemo.value = false })
+      MemorialDemoOverlay(
+        items = fixedPendingMemorialItems(state),
+        onDismiss = { showMemorialDemo.value = false },
+      )
     }
   }
 }
@@ -555,10 +559,12 @@ private fun String?.hasExtension(vararg extensions: String): Boolean {
   return extensions.any { it == extension }
 }
 
-private fun pendingMemorialCount(state: ArchiveAssistantState): Int =
-  state.topics.take(3).sumOf { topic ->
-    ((state.itemsByTopic[topic.id]?.size ?: 0) + topic.title.length) % 3
-  }
+private fun pendingMemorialCount(state: ArchiveAssistantState): Int = TOTAL_PENDING_MEMORIALS
+
+private fun fixedPendingMemorialItems(state: ArchiveAssistantState) =
+  state.topics
+    .mapNotNull { topic -> state.itemsByTopic[topic.id]?.firstOrNull() }
+    .take(TOTAL_PENDING_MEMORIALS)
 
 @Composable
 private fun SinglePaneLayout(

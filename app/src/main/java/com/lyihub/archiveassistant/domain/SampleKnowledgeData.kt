@@ -2,7 +2,7 @@ package com.lyihub.archiveassistant.domain
 
 object SampleKnowledgeData {
   const val DefaultTopicId = "topic-ai-architecture"
-  const val DemoDataVersion = 5
+  const val DemoDataVersion = 6
 
   val topics: List<Topic> =
     listOf(
@@ -838,19 +838,63 @@ object SampleKnowledgeData {
       title = title,
       summary = summary,
       fullText =
-        buildString {
-          appendLine("标签：${tags.joinToString(" · ")}")
-          appendLine("来源：$sourceTitle")
-          appendLine("原文：$sourceUrl")
-          imageResName?.let { appendLine("本地配图：$it") }
-          appendLine("采集时间：2026-06-${(28 - dayOffset % 20).toString().padStart(2, '0')}")
-          appendLine()
-          appendLine(body)
-        },
+        buildCollectedFullText(
+          title = title,
+          summary = summary,
+          tags = tags,
+          sourceTitle = sourceTitle,
+          sourceUrl = sourceUrl,
+          body = body,
+          imageResName = imageResName,
+          dayOffset = dayOffset,
+        ),
       sourceUrl = sourceUrl,
       imageResName = imageResName,
       createdAtEpochMillis = BASE_TIME - dayOffset * DAY_MILLIS,
     )
+
+  private fun buildCollectedFullText(
+    title: String,
+    summary: String,
+    tags: List<String>,
+    sourceTitle: String,
+    sourceUrl: String,
+    body: String,
+    imageResName: String?,
+    dayOffset: Int,
+  ): String = buildString {
+    appendLine("标签：${tags.joinToString(" · ")}")
+    appendLine("来源：$sourceTitle")
+    appendLine("原文：$sourceUrl")
+    imageResName?.let { appendLine("本地配图：$it") }
+    appendLine("采集时间：${collectionDate(dayOffset)}")
+    appendLine()
+    appendLine("标题：$title")
+    appendLine("摘要：$summary")
+    appendLine()
+    appendLine("整理正文")
+    appendLine()
+    appendLine("一、资料背景")
+    appendLine("$summary $body")
+    appendLine()
+    appendLine("二、核心要点")
+    appendLine("这篇资料已按「${tags.joinToString("、")}」归入当前栏目。阅读时可以先确认它解决的问题、涉及的对象，以及是否能为当前主题提供新的判断依据。")
+    appendLine("从演示数据的角度，它保留了标题、简介、来源、标签、采集时间和本地配图信息，便于在瀑布流、筛选、批阅和展开阅读等场景中复用。")
+    appendLine()
+    appendLine("三、可读内容整理")
+    appendLine("资料的主要信息可以概括为：${summary.trimEnd('。')}。${body.trim()}")
+    appendLine("如果需要继续深入，应回到原始链接核对上下文、图表、作者说明与发布时间；在应用内则优先展示已经清洗过的阅读版本，避免用户在演示流程中看到杂乱网页结构。")
+    appendLine()
+    appendLine("四、归档建议")
+    appendLine(
+      "建议保留该条目的来源链接和标签，并在后续复核时检查是否需要补充截图、正文摘录或关联资料。若它被选入待批奏章，则标题用于封面和目录，摘要用于简览，正文用于展开后的分页阅读。"
+    )
+  }
+
+  private fun collectionDate(dayOffset: Int): String {
+    val day = (29 - dayOffset % 20).coerceAtLeast(1)
+    return "2026-06-${day.toString().padStart(2, '0')}"
+  }
 
   private const val BASE_TIME = 1_782_700_177_000L
   private const val DAY_MILLIS = 86_400_000L

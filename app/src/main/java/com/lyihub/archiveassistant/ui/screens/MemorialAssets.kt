@@ -84,7 +84,7 @@ internal class MemorialAssets(context: Context) {
       }
 
   val stampTypeface: Typeface =
-    ResourcesCompat.getFont(context, R.font.ling_dong_qi_che_chun_tang) ?: heritageTypeface
+    ResourcesCompat.getFont(context, R.font.san_ji_xing_kai_jian_ti_cu) ?: heritageTypeface
 
   private val stampLikeTexture: Bitmap? =
     BitmapFactory.decodeResource(

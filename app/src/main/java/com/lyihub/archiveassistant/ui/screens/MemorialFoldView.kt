@@ -104,6 +104,7 @@ internal class MemorialFoldView(context: Context) : View(context) {
   private var foldTop = 0f
   private var foldBottom = 0f
   private var pages: List<MemorialPage> = emptyList()
+  private var dossiers: List<PendingMemorialDossier> = fallbackPendingMemorialDossiers
   private var articles: List<ArticleLayout> = emptyList()
   private var openProgress = 1f
   private var transitionAnimator: ValueAnimator? = null
@@ -161,6 +162,59 @@ internal class MemorialFoldView(context: Context) : View(context) {
     rebuildLayout(width, height)
     invalidate()
   }
+
+  fun setDossiers(nextDossiers: List<PendingMemorialDossier>) {
+    val normalized =
+      (nextDossiers.ifEmpty { fallbackPendingMemorialDossiers } + fallbackPendingMemorialDossiers)
+        .take(TOTAL_PENDING_MEMORIALS)
+    if (dossiers == normalized && pages.isNotEmpty()) {
+      invalidate()
+      return
+    }
+    dossiers = normalized
+    coverStackIndex = 0
+    resetToCoverStack()
+    rebuildPagesForCurrentDossier()
+  }
+
+  private fun resetToCoverStack() {
+    foldScrollX = 0f
+    openProgress = 0f
+    completedAlpha = 0f
+    coverDragX = 0f
+    coverDragY = 0f
+    coverPreviewStamp = null
+    coverPreviewStampStrength = 0f
+    coverPreviewStampTargetStrength = 0f
+    coverFinalStamp = null
+    coverFinalStampFromButton = false
+    coverFinalStampStrength = 0f
+    coverStackLiftProgress = 1f
+    clearAttachedCoverStamp()
+    summaryAnimator?.cancel()
+    summaryAnimator = null
+    summaryAlpha = 0f
+    completedAnimator?.cancel()
+    completedAnimator = null
+    stage = MemorialStage.CoverOnly
+    hasPlayedOpenAnimation = false
+    currentStamp = null
+    stampProgress = 0f
+  }
+
+  private fun rebuildPagesForCurrentDossier() {
+    val dossierIndex = coverStackIndex.coerceIn(0, (dossiers.size - 1).coerceAtLeast(0))
+    val dossier = dossiers[dossierIndex]
+    pages = buildMemorialPagesForDossier(dossierIndex, dossier)
+    rebuildLayout(width, height)
+    invalidate()
+  }
+
+  private fun dossierFor(index: Int): PendingMemorialDossier {
+    return dossiers[index.coerceIn(0, (dossiers.size - 1).coerceAtLeast(0))]
+  }
+
+  private fun currentDossier(): PendingMemorialDossier = dossierFor(coverStackIndex)
 
   fun setAutoDismissHandler(handler: () -> Unit) {
     onAutoDismiss = handler
@@ -225,7 +279,7 @@ internal class MemorialFoldView(context: Context) : View(context) {
 
   private fun drawStageBackground(canvas: Canvas) {
     val rect = RectF(0f, 0f, width.toFloat(), height.toFloat())
-    paints.article.color = APP_XUAN_PAPER_BASE
+    paints.article.color = APP_BACKGROUND_BASE
     canvas.drawRect(rect, paints.article)
     paints.article.color = AndroidColor.WHITE
   }
@@ -927,8 +981,7 @@ internal class MemorialFoldView(context: Context) : View(context) {
         coverFinalStamp != null
     )
       return
-    val summary =
-      pendingMemorialSummaries[coverStackIndex.coerceIn(0, pendingMemorialSummaries.lastIndex)]
+    val summary = currentDossier()
     val side =
       min(
         min(dp(388f), cover.width * 0.9f),
@@ -1023,50 +1076,62 @@ internal class MemorialFoldView(context: Context) : View(context) {
 
     val completionTitlePaint =
       TextPaint(paints.title).apply {
-        textSize = sp(33f)
+        textSize = sp(46f)
         letterSpacing = 0.08f
       }
     val completionBodyPaint =
       TextPaint(paints.quote).apply {
-        textSize = sp(22f)
-        color = AndroidColor.rgb(72, 43, 31)
-        textAlign = Paint.Align.LEFT
-      }
-    val completionHintPaint =
-      TextPaint(paints.meta).apply {
         textSize = sp(21f)
-        color = IMPERIAL_GOLD_DARK
+        color = AndroidColor.rgb(72, 43, 31)
+        textAlign = Paint.Align.CENTER
       }
 
     val contentWidth = (rect.width() * 0.64f).roundToInt()
     val contentLeft = rect.centerX() - contentWidth / 2f
     drawCenteredText(
       canvas,
-      "诸折既毕",
+      "诸折皆毕",
       rect.centerX(),
-      rect.top + rect.height() * 0.31f,
+      rect.top + rect.height() * 0.34f,
       completionTitlePaint,
     )
     drawTextBlock(
       canvas = canvas,
-      text = "六奏皆经圣裁，御前案牍暂清。伏愿皇上少憩片刻，以养宸躬。",
+      text = "六封奏章皆已批毕，御前案牍暂清。",
       paint = completionBodyPaint,
       left = contentLeft,
-      top = rect.top + rect.height() * 0.42f,
+      top = rect.top + rect.height() * 0.46f,
       width = contentWidth.toFloat(),
       lineHeightMultiplier = 1.7f,
       justify = false,
       alignment = Layout.Alignment.ALIGN_CENTER,
     )
-    drawCenteredText(
-      canvas,
-      "轻点退朝",
-      rect.centerX(),
-      rect.bottom - rect.height() * 0.24f,
-      completionHintPaint,
-    )
+    drawHorizontalRetreatStamp(canvas, rect.centerX(), rect.bottom - rect.height() * 0.24f)
     canvas.restoreToCount(layer)
     paints.layerAlpha.alpha = 255
+  }
+
+  private fun drawHorizontalRetreatStamp(canvas: Canvas, cx: Float, cy: Float) {
+    val rectWidth = dp(154f)
+    val rectHeight = dp(54f)
+    val rect =
+      RectF(cx - rectWidth / 2f, cy - rectHeight / 2f, cx + rectWidth / 2f, cy + rectHeight / 2f)
+    val texture = assets.stampTextureFor(MemorialStamp.Like)
+    texture?.let {
+      canvas.drawBitmap(it, null, rect, paints.stampImage)
+    }
+      ?: run {
+        canvas.drawRoundRect(rect, dp(3f), dp(3f), paints.stamp)
+      }
+    val textPaint =
+      TextPaint(paints.stampText).apply {
+        textSize = sp(27f)
+        color = AndroidColor.WHITE
+        textAlign = Paint.Align.CENTER
+        style = Paint.Style.FILL
+        strokeWidth = 0f
+      }
+    drawCenteredText(canvas, "轻点退朝", cx, cy + textCenterOffset(textPaint), textPaint)
   }
 
   private fun drawCoverSwipePreview(canvas: Canvas, coverLeft: Float, cover: ArticleLayout) {
@@ -1921,15 +1986,16 @@ internal class MemorialFoldView(context: Context) : View(context) {
 
   private fun drawPageContent(canvas: Canvas, article: ArticleLayout, rect: RectF) {
     when (article.page.type) {
-      MemorialPageType.Cover -> drawCoverContent(canvas, rect, article.page.pageNumber)
-      MemorialPageType.Directory -> drawDirectoryContent(canvas, rect, article.page.pageNumber)
-      MemorialPageType.BodyLeft -> drawBodyLeftContent(canvas, rect, article.page.pageNumber)
-      MemorialPageType.BodyRight -> drawBodyRightContent(canvas, rect, article.page.pageNumber)
-      MemorialPageType.End -> drawEndContent(canvas, rect, article.page.pageNumber)
+      MemorialPageType.Cover -> drawCoverContent(canvas, rect, article.page)
+      MemorialPageType.Directory -> drawDirectoryContent(canvas, rect, article.page)
+      MemorialPageType.BodyLeft,
+      MemorialPageType.BodyRight -> drawBodyContent(canvas, rect, article.page)
+      MemorialPageType.End -> drawEndContent(canvas, rect, article.page)
     }
   }
 
-  private fun drawCoverContent(canvas: Canvas, rect: RectF, pageNumber: String) {
+  private fun drawCoverContent(canvas: Canvas, rect: RectF, page: MemorialPage) {
+    val dossier = dossierFor(page.dossierIndex)
     val labelWidth = rect.width() * 0.42f
     val labelHeight = rect.height() * 0.58f
     val label =
@@ -1966,7 +2032,23 @@ internal class MemorialFoldView(context: Context) : View(context) {
       lineGap = dp(18f),
     )
     drawCenteredText(canvas, "甲辰年冬月", label.centerX(), label.bottom - dp(26f), paints.meta)
-    drawPageNumber(canvas, rect, pageNumber)
+    val titlePaint =
+      TextPaint(paints.meta).apply {
+        textSize = sp(12f)
+        color = MEMORIAL_INK_BROWN
+      }
+    drawTextBlock(
+      canvas = canvas,
+      text = dossier.title,
+      paint = titlePaint,
+      left = rect.left + dp(34f),
+      top = rect.bottom - dp(74f),
+      width = rect.width() - dp(68f),
+      lineHeightMultiplier = 1.25f,
+      justify = false,
+      alignment = Layout.Alignment.ALIGN_CENTER,
+    )
+    drawPageNumber(canvas, rect, page.pageNumber)
   }
 
   private fun drawInsideStrokeRect(canvas: Canvas, rect: RectF, paint: Paint) {
@@ -2065,111 +2147,73 @@ internal class MemorialFoldView(context: Context) : View(context) {
     canvas.restore()
   }
 
-  private fun drawDirectoryContent(canvas: Canvas, rect: RectF, pageNumber: String) {
+  private fun drawDirectoryContent(canvas: Canvas, rect: RectF, page: MemorialPage) {
+    val dossier = dossierFor(page.dossierIndex)
     var y = rect.top + dp(64f)
-    drawCenteredText(canvas, "奏报清单", rect.centerX(), y, paints.title)
+    drawCenteredText(canvas, "本折提要", rect.centerX(), y, paints.title)
     y += dp(30f)
-    drawCenteredText(canvas, "恭呈御览 · 共参", rect.centerX(), y, paints.meta)
+    drawCenteredText(
+      canvas,
+      "第 ${page.dossierIndex + 1}/$TOTAL_PENDING_MEMORIALS 封 · 恭呈御览",
+      rect.centerX(),
+      y,
+      paints.meta,
+    )
     y += dp(42f)
 
     val itemLeft = rect.left + dp(44f)
     val itemWidth = rect.width() - dp(88f)
-    directoryItems.forEach { item ->
-      drawTextBlock(canvas, item.title, paints.itemTitle, itemLeft, y, itemWidth, 1.35f, false)
-      y += dp(30f)
-      drawTextBlock(canvas, item.meta, paints.itemMeta, itemLeft, y, itemWidth, 1.35f, false)
-      y += dp(28f)
-      val excerptLayout =
-        buildTextLayout(item.excerpt, paints.author, itemWidth.roundToInt(), 1.7f, false)
-      canvas.save()
-      canvas.translate(itemLeft, y)
-      excerptLayout.draw(canvas)
-      canvas.restore()
-      y += excerptLayout.height + dp(24f)
-      canvas.drawLine(itemLeft, y, itemLeft + itemWidth, y, paints.dashed)
-      y += dp(24f)
-    }
-    drawPageNumber(canvas, rect, pageNumber)
+    drawTextBlock(canvas, dossier.title, paints.itemTitle, itemLeft, y, itemWidth, 1.28f, false)
+    y += dp(38f)
+    drawTextBlock(canvas, dossier.source, paints.itemMeta, itemLeft, y, itemWidth, 1.32f, false)
+    y += dp(28f)
+    val tagLine = if (dossier.tags.isEmpty()) "标签：待批" else "标签：${dossier.tags.joinToString(" · ")}"
+    drawTextBlock(canvas, tagLine, paints.itemMeta, itemLeft, y, itemWidth, 1.32f, false)
+    y += dp(34f)
+    canvas.drawLine(itemLeft, y, itemLeft + itemWidth, y, paints.dashed)
+    y += dp(28f)
+    drawTextBlock(
+      canvas = canvas,
+      text = dossier.summary,
+      paint = paints.author,
+      left = itemLeft,
+      top = y,
+      width = itemWidth,
+      lineHeightMultiplier = 1.75f,
+      justify = false,
+    )
+    drawPageNumber(canvas, rect, page.pageNumber)
   }
 
-  private fun drawBodyLeftContent(canvas: Canvas, rect: RectF, pageNumber: String) {
+  private fun drawBodyContent(canvas: Canvas, rect: RectF, page: MemorialPage) {
+    val dossier = dossierFor(page.dossierIndex)
+    val segments = splitMemorialBody(dossier.body)
+    val segment = segments.getOrElse(page.bodySegmentIndex) { segments.last() }
     var y = rect.top + dp(54f)
-    drawCenteredText(canvas, "江南水患赈灾折", rect.centerX(), y, paints.title)
-    y += dp(30f)
-    drawCenteredText(canvas, "工部侍郎 张廷玉谨奏", rect.centerX(), y, paints.meta)
-    y += dp(42f)
-
+    if (page.bodySegmentIndex == 0) {
+      drawCenteredText(canvas, dossier.title, rect.centerX(), y, paints.title)
+      y += dp(30f)
+      drawCenteredText(canvas, dossier.source, rect.centerX(), y, paints.meta)
+      y += dp(42f)
+    } else {
+      y = rect.top + dp(64f)
+    }
     val left = rect.left + dp(42f)
     val width = rect.width() - dp(84f)
-    y = drawParagraph(canvas, "臣张廷玉谨奏：为恭报江南水患灾情，恳恩赈济事。", left, y, width)
-    y =
-      drawParagraph(
-        canvas,
-        "今岁自入夏以来，江南地区秋雨连绵不止，淮水上游水量骤增，致下游各州县河堤多处溃决。据江宁、苏州、扬州各府急报，田亩淹没者逾十万顷，房屋倾圮者不可胜计，灾民流离失所，号泣于道者数十万人。",
-        left,
-        y,
-        width,
-      )
-    drawParagraph(
+    drawTextBlock(
       canvas,
-      "臣已飞饬地方官吏，先行开仓放赈，安顿老弱。然库存有限，赈米仅敷半月之用。且天寒地冻，灾民衣不蔽体，疾疫恐将蔓延。",
+      segment,
+      paints.author,
       left,
       y,
       width,
-    )
-    drawPageNumber(canvas, rect, pageNumber)
-  }
-
-  private fun drawBodyRightContent(canvas: Canvas, rect: RectF, pageNumber: String) {
-    var y = rect.top + dp(70f)
-    val left = rect.left + dp(42f)
-    val width = rect.width() - dp(84f)
-    y =
-      drawParagraph(
-        canvas,
-        "伏乞皇上圣鉴，着户部即刻拨银五十万两，粮三十万石，星夜运往灾区。地方官吏如有侵吞克扣者，斩立决。",
-        left,
-        y,
-        width,
-        paints.cinnabar,
-      )
-
-    val boxTop = y + dp(10f)
-    val box = RectF(left, boxTop, left + width, boxTop + dp(134f))
-    paints.article.color = AndroidColor.argb(76, 232, 222, 192)
-    canvas.drawRect(box, paints.article)
-    paints.article.color = AndroidColor.WHITE
-    canvas.drawRect(box, paints.gold)
-    drawTextBlock(
-      canvas,
-      "朕览奏殊深轸念。江南百姓，朕之赤子。着即刻依议行，不得延误。钦差大臣即日南下督赈。",
-      paints.author,
-      box.left + dp(22f),
-      box.top + dp(24f),
-      box.width() - dp(44f),
-      1.9f,
+      1.82f,
       false,
     )
-    y = box.bottom + dp(46f)
-    val signPaint =
-      TextPaint(paints.author).apply {
-        color = AndroidColor.rgb(74, 74, 74)
-      }
-    drawTextBlock(
-      canvas = canvas,
-      text = "臣 张廷玉 叩首\n甲辰年冬月 初八日",
-      paint = signPaint,
-      left = left,
-      top = y,
-      width = width,
-      lineHeightMultiplier = 1.8f,
-      justify = false,
-      alignment = Layout.Alignment.ALIGN_OPPOSITE,
-    )
-    drawPageNumber(canvas, rect, pageNumber)
+    drawPageNumber(canvas, rect, page.pageNumber)
   }
 
-  private fun drawEndContent(canvas: Canvas, rect: RectF, pageNumber: String) {
+  private fun drawEndContent(canvas: Canvas, rect: RectF, page: MemorialPage) {
     val centerY = rect.centerY() - dp(54f)
     val endPaint =
       TextPaint(paints.title).apply {
@@ -2198,9 +2242,9 @@ internal class MemorialFoldView(context: Context) : View(context) {
     )
     canvas.restore()
 
-    drawCenteredText(canvas, "奏折已览毕", rect.centerX(), seal.bottom + dp(56f), paints.author)
-    drawCenteredText(canvas, "留中不发 / 发抄各部", rect.centerX(), seal.bottom + dp(86f), paints.author)
-    drawPageNumber(canvas, rect, pageNumber)
+    drawCenteredText(canvas, "奏章已览毕", rect.centerX(), seal.bottom + dp(56f), paints.author)
+    drawCenteredText(canvas, "准 · 驳 · 留中", rect.centerX(), seal.bottom + dp(86f), paints.author)
+    drawPageNumber(canvas, rect, page.pageNumber)
   }
 
   private fun drawParagraph(
@@ -2594,6 +2638,7 @@ internal class MemorialFoldView(context: Context) : View(context) {
     coverSwipeAnimator?.cancel()
     coverSwipeAnimator = null
     coverStackLiftProgress = 1f
+    rebuildPagesForCurrentDossier()
     invalidate()
   }
 

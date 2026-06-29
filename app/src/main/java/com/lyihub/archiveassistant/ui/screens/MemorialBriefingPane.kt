@@ -283,8 +283,7 @@ private fun PendingVerticalNote(
       color = Color.White,
       textAlign = TextAlign.Center,
       lineHeight = 31.sp,
-      modifier =
-        Modifier.align(Alignment.Center).width(31.dp).padding(horizontal = 0.dp, vertical = 1.dp),
+      modifier = Modifier.align(Alignment.Center).width(31.dp),
     )
   }
 }
@@ -696,21 +695,21 @@ private fun MemorialBriefCard(
   sample: BriefingSample,
   modifier: Modifier = Modifier,
 ) {
-  AnimatedContent(
-    targetState = sample,
-    transitionSpec = {
-      fadeIn(animationSpec = tween(240)) togetherWith fadeOut(animationSpec = tween(180))
-    },
-    label = "memorialBriefCardContent",
-    modifier = modifier,
-  ) { activeSample ->
-    MemorialFramedPaperPanel(
-      modifier = Modifier.fillMaxWidth().heightIn(min = 76.dp),
-      cornerSize = 12.dp,
-      contentPadding = 13.dp,
-    ) {
+  MemorialFramedPaperPanel(
+    modifier = modifier.fillMaxWidth().heightIn(min = 76.dp),
+    cornerSize = 12.dp,
+    contentPadding = 13.dp,
+  ) {
+    AnimatedContent(
+      targetState = sample,
+      transitionSpec = {
+        fadeIn(animationSpec = tween(240)) togetherWith fadeOut(animationSpec = tween(180))
+      },
+      label = "memorialBriefCardContent",
+      modifier = Modifier.align(Alignment.CenterStart).fillMaxWidth(),
+    ) { activeSample ->
       Column(
-        modifier = Modifier.align(Alignment.CenterStart).fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp),
       ) {
         Text(

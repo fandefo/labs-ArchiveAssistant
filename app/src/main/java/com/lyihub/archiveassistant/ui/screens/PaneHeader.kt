@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.lyihub.archiveassistant.ui.theme.ImperialDisplayFont
 
 @Composable
 internal fun PaneHeroHeader(
@@ -56,7 +57,7 @@ internal fun PaneHeroHeader(
     }
     Text(
       text = description,
-      style = MaterialTheme.typography.titleSmall,
+      style = MaterialTheme.typography.titleSmall.copy(fontFamily = ImperialDisplayFont),
       color = Color.Black.copy(alpha = 0.78f),
       modifier = Modifier.fillMaxWidth().testTag("pane-hero-summary"),
     )

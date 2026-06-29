@@ -171,7 +171,7 @@ fun DetailPane(
       if (availableTags.isEmpty() || activeTags.isEmpty()) {
         emptyList()
       } else {
-        items.filter { item -> articleTags(item).all { tag -> tag in activeTags } }
+        items.filter { item -> articleTags(item).any { tag -> tag in activeTags } }
       }
     }
 
@@ -360,12 +360,27 @@ private fun DetailCourtHeader(
 ) {
   PaneHeroHeader(
     title = topic.title,
-    description = "$itemCount 篇",
+    description = "$itemCount 篇 · ${folderDescription(topic)}",
     showBackButton = showBackButton,
     onBack = onBack,
     modifier = modifier.testTag("detail-summary"),
   )
 }
+
+private fun folderDescription(topic: Topic): String {
+  val index = SampleTopicIds.indexOf(topic.id).takeIf { it >= 0 } ?: return "近期收藏与重点资料归档"
+  return folderVisual(index).description
+}
+
+private val SampleTopicIds =
+  listOf(
+    "topic-ai-architecture",
+    "topic-ui-inspiration",
+    "topic-anthropology-clips",
+    "topic-hidden-travel",
+    "topic-open-source-tools",
+    "topic-knowledge-workflows",
+  )
 
 @Composable
 private fun MemorialArticleCard(
@@ -401,7 +416,7 @@ private fun MemorialArticleCard(
     Box(modifier = Modifier.matchParentSize().background(Color.White.copy(alpha = 0.2f)))
     Column(modifier = Modifier.fillMaxWidth()) {
       if (imageResId != null) {
-        Box(modifier = Modifier.fillMaxWidth().padding(7.dp).clip(imageShape)) {
+        Box(modifier = Modifier.fillMaxWidth().clip(imageShape)) {
           Image(
             painter = painterResource(id = imageResId),
             contentDescription = null,
