@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -39,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
@@ -55,48 +55,11 @@ import com.lyihub.archiveassistant.domain.Topic
 import com.lyihub.archiveassistant.ui.theme.ImperialCinnabar
 import com.lyihub.archiveassistant.ui.theme.ImperialDisplayFont
 import com.lyihub.archiveassistant.ui.theme.ImperialIvory
-import com.lyihub.archiveassistant.ui.theme.ImperialStampTitleFont
 import com.lyihub.archiveassistant.ui.theme.ImperialTitleFont
 import com.lyihub.archiveassistant.ui.theme.ImperialUmber
 
 private val HomeInk = ImperialUmber
 private val HomePaper = ImperialIvory
-
-private val MinistryTicketShape = GenericShape { size, _ ->
-  val notchRadius = (size.height * 0.25f).coerceIn(12f, 21f)
-  val toothRadius = (size.height * 0.08f).coerceIn(5f, 8.5f)
-  val toothCount = 8
-  val toothPitch = size.width / toothCount
-
-  moveTo(0f, 0f)
-  repeat(toothCount) { index ->
-    val left = toothPitch * index
-    val mid = left + toothPitch * 0.5f
-    val right = left + toothPitch
-    lineTo(mid - toothRadius, 0f)
-    quadraticTo(mid, toothRadius, mid + toothRadius, 0f)
-    lineTo(right, 0f)
-  }
-  lineTo(size.width, size.height * 0.5f - notchRadius)
-  quadraticTo(
-    size.width - notchRadius,
-    size.height * 0.5f,
-    size.width,
-    size.height * 0.5f + notchRadius,
-  )
-  lineTo(size.width, size.height)
-  for (index in toothCount - 1 downTo 0) {
-    val right = toothPitch * (index + 1)
-    val mid = toothPitch * index + toothPitch * 0.5f
-    val left = toothPitch * index
-    lineTo(mid + toothRadius, size.height)
-    quadraticTo(mid, size.height - toothRadius, mid - toothRadius, size.height)
-    lineTo(left.coerceAtLeast(0f), size.height)
-  }
-  lineTo(0f, size.height * 0.5f + notchRadius)
-  quadraticTo(notchRadius, size.height * 0.5f, 0f, size.height * 0.5f - notchRadius)
-  close()
-}
 
 private val FolderFallbackTitles =
   listOf(
@@ -276,7 +239,7 @@ private fun TitleCell(
       )
       Text(
         text = "中书录入 · 批奏折 · 尚书归档",
-        style = MaterialTheme.typography.titleSmall,
+        style = MaterialTheme.typography.titleSmall.copy(fontFamily = ImperialDisplayFont),
         color = Color.Black.copy(alpha = 0.72f),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
@@ -562,30 +525,32 @@ private fun MinistryStampStack(
   onToggleManage: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  val stackShadowShape = RoundedCornerShape(8.dp)
   Column(
     modifier =
-      modifier.shadow(11.dp, stackShadowShape, clip = false).testTag("ministry-stamp-stack"),
-    verticalArrangement = Arrangement.spacedBy(0.dp),
+      modifier
+        .shadow(11.dp, RoundedCornerShape(8.dp), clip = false)
+        .testTag("ministry-stamp-stack"),
+    verticalArrangement = Arrangement.spacedBy(7.dp),
   ) {
-    MinistryTicketSurface(
+    MinistryFoldSurface(
       modifier = Modifier.fillMaxWidth(),
-      borderAlpha = 0.28f,
+      shape = ArchiveCutCornerShape,
+      foldIntensity = 0.22f,
     ) {
       Row(
         modifier =
           Modifier.fillMaxWidth().padding(start = 16.dp, top = 14.dp, end = 10.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
-        val headerStyle = MaterialTheme.typography.titleLarge
+        val headerFamily = ImperialTitleFont
         Text(
           text =
             buildAnnotatedString {
               withStyle(
                 SpanStyle(
                   color = ImperialCinnabar,
-                  fontFamily = ImperialStampTitleFont,
-                  fontSize = headerStyle.fontSize,
+                  fontFamily = headerFamily,
+                  fontSize = MaterialTheme.typography.headlineSmall.fontSize,
                 )
               ) {
                 append("「尚书省」")
@@ -593,18 +558,18 @@ private fun MinistryStampStack(
               withStyle(
                 SpanStyle(
                   color = Color.Black,
-                  fontFamily = ImperialDisplayFont,
-                  fontSize = headerStyle.fontSize,
+                  fontFamily = headerFamily,
+                  fontSize = MaterialTheme.typography.titleMedium.fontSize,
                 )
               ) {
                 append("最近主题")
               }
             },
-          style = headerStyle,
+          style = MaterialTheme.typography.titleMedium.copy(fontFamily = headerFamily),
           fontWeight = FontWeight.Normal,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis,
-          lineHeight = headerStyle.lineHeight,
+          lineHeight = MaterialTheme.typography.headlineSmall.lineHeight,
           modifier = Modifier.weight(1f),
         )
         MinistryHeaderAction(
@@ -698,7 +663,7 @@ private fun FolderResultList(
     verticalArrangement = Arrangement.spacedBy(0.dp),
   ) {
     folders.forEachIndexed { index, folder ->
-      MinistryTicketCard(
+      MinistryFoldCard(
         folder = folder,
         visual = folderVisual(index),
         onTopicSelected = onTopicSelected,
@@ -713,7 +678,7 @@ private fun FolderResultList(
 }
 
 @Composable
-private fun MinistryTicketCard(
+private fun MinistryFoldCard(
   folder: DashboardFolder,
   visual: FolderVisual,
   onTopicSelected: (String) -> Unit,
@@ -729,14 +694,15 @@ private fun MinistryTicketCard(
     if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleLarge
   val summaryStyle =
     if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
-  MinistryTicketSurface(
+  MinistryFoldSurface(
     modifier =
       modifier
         .clickable(enabled = enabled && !isManagingMinistries) {
           folder.topic?.let { onTopicSelected(it.id) }
         }
         .testTag("topic-card-${folder.id}"),
-    borderAlpha = 0.22f,
+    shape = RoundedCornerShape(7.dp),
+    foldIntensity = if (compact) 0.16f else 0.2f,
   ) {
     Row(
       modifier =
@@ -757,9 +723,9 @@ private fun MinistryTicketCard(
         )
         Text(
           text = visual.description,
-          style = summaryStyle,
+          style = summaryStyle.copy(fontFamily = ImperialDisplayFont),
           color = Color.Black.copy(alpha = 0.52f),
-          fontWeight = FontWeight.SemiBold,
+          fontWeight = FontWeight.Normal,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis,
         )
@@ -830,19 +796,40 @@ private fun MinistryInlineAction(
 }
 
 @Composable
-private fun MinistryTicketSurface(
+private fun MinistryFoldSurface(
   modifier: Modifier = Modifier,
-  borderAlpha: Float,
+  shape: androidx.compose.ui.graphics.Shape,
+  foldIntensity: Float,
   content: @Composable androidx.compose.foundation.layout.BoxScope.() -> Unit,
 ) {
-  Box(modifier = modifier.clip(MinistryTicketShape).background(Color.White, MinistryTicketShape)) {
+  Box(modifier = modifier.clip(shape).background(Color.White, shape)) {
     Image(
       painter = painterResource(id = R.drawable.home_search_tile),
       contentDescription = null,
       modifier = Modifier.matchParentSize(),
       contentScale = ContentScale.Crop,
     )
-    Box(modifier = Modifier.matchParentSize().background(Color.White.copy(alpha = 0.24f)))
+    Box(modifier = Modifier.matchParentSize().background(Color.White.copy(alpha = 0.32f)))
+    Box(
+      modifier =
+        Modifier.matchParentSize()
+          .background(
+            Brush.horizontalGradient(
+              0f to Color.Transparent,
+              0.7f to Color.Transparent,
+              0.88f to Color.Black.copy(alpha = 0.045f * foldIntensity * 6f),
+              0.95f to Color.White.copy(alpha = 0.34f * foldIntensity * 3f),
+              1f to Color.Black.copy(alpha = 0.08f * foldIntensity * 5f),
+            )
+          )
+    )
+    Box(
+      modifier =
+        Modifier.align(Alignment.CenterEnd)
+          .fillMaxHeight()
+          .width(9.dp)
+          .background(Color.Black.copy(alpha = 0.05f * foldIntensity * 5f))
+    )
     content()
   }
 }

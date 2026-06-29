@@ -401,7 +401,7 @@ private fun MemorialArticleCard(
     Box(modifier = Modifier.matchParentSize().background(Color.White.copy(alpha = 0.2f)))
     Column(modifier = Modifier.fillMaxWidth()) {
       if (imageResId != null) {
-        Box(modifier = Modifier.fillMaxWidth().clip(imageShape)) {
+        Box(modifier = Modifier.fillMaxWidth().padding(7.dp).clip(imageShape)) {
           Image(
             painter = painterResource(id = imageResId),
             contentDescription = null,

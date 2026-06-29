@@ -1,18 +1,27 @@
 package com.lyihub.archiveassistant.ui.screens
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +34,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,9 +45,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.lyihub.archiveassistant.R
 import com.lyihub.archiveassistant.data.AiEndpointLatencyResult
 import com.lyihub.archiveassistant.data.AiEnginePresetPreferences.presetFromCurrentSettings
 import com.lyihub.archiveassistant.data.AiEnginePresetPreferences.toSettings
@@ -56,7 +73,15 @@ import com.lyihub.archiveassistant.ui.components.PaneContainer
 import com.lyihub.archiveassistant.ui.components.PaneContentPadding
 import com.lyihub.archiveassistant.ui.components.PaneDivider
 import com.lyihub.archiveassistant.ui.components.PaneHeader
+import com.lyihub.archiveassistant.ui.theme.ImperialCinnabar
+import com.lyihub.archiveassistant.ui.theme.ImperialDisplayFont
+import com.lyihub.archiveassistant.ui.theme.ImperialIvory
+import com.lyihub.archiveassistant.ui.theme.ImperialParchment
 import kotlinx.coroutines.launch
+
+private val SettingsPanelShape = RoundedCornerShape(8.dp)
+private val SettingsFieldShape = RoundedCornerShape(5.dp)
+private val SettingsButtonShape = RoundedCornerShape(5.dp)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,197 +144,226 @@ fun SettingsPane(
     PaneDivider()
     Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
       PaneContentPadding {
-        Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
-          ) {
-            Text(
-              text = "AI 推理引擎配置",
-              style = MaterialTheme.typography.titleMedium,
-              color = MaterialTheme.colorScheme.onSurface,
-              modifier = Modifier.weight(1f),
-            )
-            Spacer(modifier = Modifier.width(12.dp))
+        SettingsPaperSection {
+          Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Text(
+                text = "AI 推理引擎配置",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black,
+                modifier = Modifier.weight(1f),
+              )
+              Spacer(modifier = Modifier.width(12.dp))
+              ExposedDropdownMenuBox(
+                expanded = presetExpanded,
+                onExpandedChange = { presetExpanded = it },
+                modifier = Modifier.width(160.dp),
+              ) {
+                OutlinedTextField(
+                  value = selectedPresetLabel,
+                  onValueChange = {},
+                  readOnly = true,
+                  label = { Text("预设") },
+                  trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = presetExpanded)
+                  },
+                  shape = SettingsFieldShape,
+                  colors = settingsTextFieldColors(),
+                  textStyle =
+                    MaterialTheme.typography.bodyMedium.copy(fontFamily = ImperialDisplayFont),
+                  modifier =
+                    Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                      .fillMaxWidth()
+                      .testTag("preset-selector"),
+                )
+                ExposedDropdownMenu(
+                  expanded = presetExpanded,
+                  onDismissRequest = { presetExpanded = false },
+                ) {
+                  if (presets.isEmpty()) {
+                    DropdownMenuItem(
+                      text = { Text("暂无预设") },
+                      onClick = { presetExpanded = false },
+                    )
+                  } else {
+                    presets.forEach { preset ->
+                      DropdownMenuItem(
+                        text = { Text(preset.name) },
+                        onClick = {
+                          onAiSettingsChanged(preset.toSettings())
+                          presetExpanded = false
+                        },
+                      )
+                    }
+                  }
+                  HorizontalDivider()
+                  DropdownMenuItem(
+                    text = { Text("保存当前为预设") },
+                    onClick = {
+                      newPresetName = ""
+                      savePresetError = null
+                      savePresetDialogVisible = true
+                      presetExpanded = false
+                    },
+                  )
+                  DropdownMenuItem(
+                    text = { Text("删除当前预设") },
+                    enabled =
+                      selectedPresetName != null && presets.any { it.name == selectedPresetName },
+                    onClick = {
+                      val name = selectedPresetName ?: return@DropdownMenuItem
+                      onPresetsChanged(presets.filterNot { it.name == name })
+                      presetExpanded = false
+                    },
+                  )
+                }
+              }
+            }
+
             ExposedDropdownMenuBox(
-              expanded = presetExpanded,
-              onExpandedChange = { presetExpanded = it },
-              modifier = Modifier.width(160.dp),
+              expanded = engineTypeExpanded,
+              onExpandedChange = { engineTypeExpanded = it },
+              modifier = Modifier.fillMaxWidth().testTag("engine-type-selector"),
             ) {
               OutlinedTextField(
-                value = selectedPresetLabel,
+                value =
+                  when (aiSettings.engineType) {
+                    AiEngineType.OPENAI_COMPATIBLE -> "OpenAI-Compatible"
+                    AiEngineType.OPENAI_RESPONSES -> "OpenAI-Responses"
+                    AiEngineType.ANTHROPIC -> "Anthropic"
+                    AiEngineType.GEMINI -> "Gemini"
+                    AiEngineType.LOCAL_MODEL -> "本地模型"
+                  },
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("预设") },
+                label = { Text("引擎类型") },
                 trailingIcon = {
-                  ExposedDropdownMenuDefaults.TrailingIcon(expanded = presetExpanded)
+                  ExposedDropdownMenuDefaults.TrailingIcon(expanded = engineTypeExpanded)
                 },
-                modifier =
-                  Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                    .fillMaxWidth()
-                    .testTag("preset-selector"),
+                shape = SettingsFieldShape,
+                colors = settingsTextFieldColors(),
+                textStyle =
+                  MaterialTheme.typography.bodyMedium.copy(fontFamily = ImperialDisplayFont),
+                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
               )
               ExposedDropdownMenu(
-                expanded = presetExpanded,
-                onDismissRequest = { presetExpanded = false },
+                expanded = engineTypeExpanded,
+                onDismissRequest = { engineTypeExpanded = false },
               ) {
-                if (presets.isEmpty()) {
-                  DropdownMenuItem(
-                    text = { Text("暂无预设") },
-                    onClick = { presetExpanded = false },
-                  )
-                } else {
-                  presets.forEach { preset ->
-                    DropdownMenuItem(
-                      text = { Text(preset.name) },
-                      onClick = {
-                        onAiSettingsChanged(preset.toSettings())
-                        presetExpanded = false
-                      },
-                    )
-                  }
-                }
-                HorizontalDivider()
                 DropdownMenuItem(
-                  text = { Text("保存当前为预设") },
+                  text = { Text("OpenAI-Compatible") },
                   onClick = {
-                    newPresetName = ""
-                    savePresetError = null
-                    savePresetDialogVisible = true
-                    presetExpanded = false
+                    onAiSettingsChanged(
+                      aiSettings.copy(engineType = AiEngineType.OPENAI_COMPATIBLE)
+                    )
+                    engineTypeExpanded = false
                   },
                 )
                 DropdownMenuItem(
-                  text = { Text("删除当前预设") },
-                  enabled =
-                    selectedPresetName != null && presets.any { it.name == selectedPresetName },
+                  text = { Text("OpenAI-Responses") },
                   onClick = {
-                    val name = selectedPresetName ?: return@DropdownMenuItem
-                    onPresetsChanged(presets.filterNot { it.name == name })
-                    presetExpanded = false
+                    onAiSettingsChanged(aiSettings.copy(engineType = AiEngineType.OPENAI_RESPONSES))
+                    engineTypeExpanded = false
+                  },
+                )
+                DropdownMenuItem(
+                  text = { Text("Anthropic") },
+                  onClick = {
+                    onAiSettingsChanged(aiSettings.copy(engineType = AiEngineType.ANTHROPIC))
+                    engineTypeExpanded = false
+                  },
+                )
+                DropdownMenuItem(
+                  text = { Text("Gemini") },
+                  onClick = {
+                    onAiSettingsChanged(aiSettings.copy(engineType = AiEngineType.GEMINI))
+                    engineTypeExpanded = false
+                  },
+                )
+                DropdownMenuItem(
+                  text = { Text("本地模型") },
+                  onClick = {
+                    onAiSettingsChanged(aiSettings.copy(engineType = AiEngineType.LOCAL_MODEL))
+                    engineTypeExpanded = false
                   },
                 )
               }
             }
-          }
 
-          ExposedDropdownMenuBox(
-            expanded = engineTypeExpanded,
-            onExpandedChange = { engineTypeExpanded = it },
-            modifier = Modifier.fillMaxWidth().testTag("engine-type-selector"),
-          ) {
-            OutlinedTextField(
-              value =
-                when (aiSettings.engineType) {
-                  AiEngineType.OPENAI_COMPATIBLE -> "OpenAI-Compatible"
-                  AiEngineType.OPENAI_RESPONSES -> "OpenAI-Responses"
-                  AiEngineType.ANTHROPIC -> "Anthropic"
-                  AiEngineType.GEMINI -> "Gemini"
-                  AiEngineType.LOCAL_MODEL -> "本地模型"
+            if (aiSettings.engineType != AiEngineType.LOCAL_MODEL) {
+              OutlinedTextField(
+                value = aiSettings.baseUrl,
+                onValueChange = {
+                  onAiSettingsChanged(aiSettings.copy(baseUrl = it))
                 },
-              onValueChange = {},
-              readOnly = true,
-              label = { Text("引擎类型") },
-              trailingIcon = {
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = engineTypeExpanded)
-              },
-              modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
-            )
-            ExposedDropdownMenu(
-              expanded = engineTypeExpanded,
-              onDismissRequest = { engineTypeExpanded = false },
-            ) {
-              DropdownMenuItem(
-                text = { Text("OpenAI-Compatible") },
-                onClick = {
-                  onAiSettingsChanged(aiSettings.copy(engineType = AiEngineType.OPENAI_COMPATIBLE))
-                  engineTypeExpanded = false
-                },
+                label = { Text("Base URL") },
+                singleLine = true,
+                shape = SettingsFieldShape,
+                colors = settingsTextFieldColors(),
+                textStyle =
+                  MaterialTheme.typography.bodyMedium.copy(fontFamily = ImperialDisplayFont),
+                modifier = Modifier.fillMaxWidth().testTag("cloud-base-url-input"),
               )
-              DropdownMenuItem(
-                text = { Text("OpenAI-Responses") },
-                onClick = {
-                  onAiSettingsChanged(aiSettings.copy(engineType = AiEngineType.OPENAI_RESPONSES))
-                  engineTypeExpanded = false
+              OutlinedTextField(
+                value = aiSettings.apiKey,
+                onValueChange = {
+                  onAiSettingsChanged(aiSettings.copy(apiKey = it))
                 },
+                label = { Text("API 密钥") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                shape = SettingsFieldShape,
+                colors = settingsTextFieldColors(),
+                textStyle =
+                  MaterialTheme.typography.bodyMedium.copy(fontFamily = ImperialDisplayFont),
+                modifier = Modifier.fillMaxWidth().testTag("api-key-input"),
               )
-              DropdownMenuItem(
-                text = { Text("Anthropic") },
-                onClick = {
-                  onAiSettingsChanged(aiSettings.copy(engineType = AiEngineType.ANTHROPIC))
-                  engineTypeExpanded = false
+              OutlinedTextField(
+                value = aiSettings.modelName,
+                onValueChange = {
+                  onAiSettingsChanged(aiSettings.copy(modelName = it))
                 },
-              )
-              DropdownMenuItem(
-                text = { Text("Gemini") },
-                onClick = {
-                  onAiSettingsChanged(aiSettings.copy(engineType = AiEngineType.GEMINI))
-                  engineTypeExpanded = false
-                },
-              )
-              DropdownMenuItem(
-                text = { Text("本地模型") },
-                onClick = {
-                  onAiSettingsChanged(aiSettings.copy(engineType = AiEngineType.LOCAL_MODEL))
-                  engineTypeExpanded = false
-                },
+                label = { Text("模型名称") },
+                singleLine = true,
+                shape = SettingsFieldShape,
+                colors = settingsTextFieldColors(),
+                textStyle =
+                  MaterialTheme.typography.bodyMedium.copy(fontFamily = ImperialDisplayFont),
+                modifier = Modifier.fillMaxWidth().testTag("cloud-model-input"),
               )
             }
-          }
 
-          if (aiSettings.engineType != AiEngineType.LOCAL_MODEL) {
-            OutlinedTextField(
-              value = aiSettings.baseUrl,
-              onValueChange = {
-                onAiSettingsChanged(aiSettings.copy(baseUrl = it))
-              },
-              label = { Text("Base URL") },
-              singleLine = true,
-              modifier = Modifier.fillMaxWidth().testTag("cloud-base-url-input"),
-            )
-            OutlinedTextField(
-              value = aiSettings.apiKey,
-              onValueChange = {
-                onAiSettingsChanged(aiSettings.copy(apiKey = it))
-              },
-              label = { Text("API 密钥") },
-              singleLine = true,
-              visualTransformation = PasswordVisualTransformation(),
-              modifier = Modifier.fillMaxWidth().testTag("api-key-input"),
-            )
-            OutlinedTextField(
-              value = aiSettings.modelName,
-              onValueChange = {
-                onAiSettingsChanged(aiSettings.copy(modelName = it))
-              },
-              label = { Text("模型名称") },
-              singleLine = true,
-              modifier = Modifier.fillMaxWidth().testTag("cloud-model-input"),
-            )
-          }
-
-          if (aiSettings.engineType == AiEngineType.LOCAL_MODEL) {
-            Column(
-              modifier = Modifier.fillMaxWidth().testTag("local-model-panel"),
-              verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-              Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                  modifier = Modifier.fillMaxWidth().padding(16.dp),
-                  verticalArrangement = Arrangement.spacedBy(8.dp),
+            if (aiSettings.engineType == AiEngineType.LOCAL_MODEL) {
+              Column(
+                modifier = Modifier.fillMaxWidth().testTag("local-model-panel"),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+              ) {
+                Card(
+                  modifier = Modifier.fillMaxWidth(),
+                  shape = SettingsPanelShape,
+                  colors =
+                    CardDefaults.cardColors(containerColor = ImperialIvory.copy(alpha = 0.84f)),
                 ) {
-                  Text(
-                    text = GEMMA_4_E4B_IT.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                  )
-                  Text(
-                    text = "大小: %.2f GB".format(GEMMA_4_E4B_IT.sizeBytes / (1024f * 1024f * 1024f)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                  )
-                  Text(
-                    text =
-                      "状态: ${when (localModelState.status) {
+                  Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                  ) {
+                    Text(
+                      text = GEMMA_4_E4B_IT.displayName,
+                      style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                      text =
+                        "大小: %.2f GB".format(GEMMA_4_E4B_IT.sizeBytes / (1024f * 1024f * 1024f)),
+                      style = MaterialTheme.typography.bodyMedium,
+                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                      text =
+                        "状态: ${when (localModelState.status) {
                                             LocalModelStatus.NOT_DOWNLOADED -> "未下载"
                                             LocalModelStatus.DOWNLOADING -> "下载中"
                                             LocalModelStatus.DOWNLOADED -> "已下载"
@@ -319,235 +373,254 @@ fun SettingsPane(
                                             LocalModelStatus.ERROR -> "错误"
                                             LocalModelStatus.STOPPING -> "停止中"
                                         }}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.testTag("model-status-text"),
-                  )
-                }
-              }
-
-              when (localModelState.status) {
-                LocalModelStatus.NOT_DOWNLOADED,
-                LocalModelStatus.ERROR -> {
-                  Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                  ) {
-                    Button(
-                      onClick = onDownloadModel,
-                      modifier = Modifier.weight(1f).testTag("download-model-button"),
-                    ) {
-                      Text("下载模型")
-                    }
-                    Button(
-                      onClick = onChooseModelFile,
-                      modifier = Modifier.weight(1f).testTag("choose-model-file-button"),
-                    ) {
-                      Text("选择文件")
-                    }
-                  }
-                }
-                LocalModelStatus.DOWNLOADING -> {
-                  val isImportingModel =
-                    localModelState.downloadBytes == 0L && localModelState.downloadProgress == 0f
-                  Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                  ) {
-                    LinearProgressIndicator(
-                      progress = { localModelState.downloadProgress },
-                      modifier = Modifier.fillMaxWidth().testTag("download-progress-bar"),
-                    )
-                    Text(
-                      text = if (isImportingModel) "正在导入并校验模型文件，请稍候" else "正在下载模型，请稍候",
                       style = MaterialTheme.typography.bodyMedium,
-                      color = MaterialTheme.colorScheme.onSurfaceVariant,
-                      modifier = Modifier.fillMaxWidth().testTag("model-busy-text"),
+                      color = MaterialTheme.colorScheme.primary,
+                      modifier = Modifier.testTag("model-status-text"),
                     )
-                    if (!isImportingModel) {
-                      TextButton(
-                        onClick = onCancelDownload,
-                        modifier = Modifier.fillMaxWidth().testTag("cancel-download-button"),
+                  }
+                }
+
+                when (localModelState.status) {
+                  LocalModelStatus.NOT_DOWNLOADED,
+                  LocalModelStatus.ERROR -> {
+                    Row(
+                      modifier = Modifier.fillMaxWidth(),
+                      horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                      Button(
+                        onClick = onDownloadModel,
+                        shape = SettingsButtonShape,
+                        colors = settingsButtonColors(),
+                        modifier = Modifier.weight(1f).testTag("download-model-button"),
                       ) {
-                        Text("取消")
+                        Text("下载模型")
+                      }
+                      Button(
+                        onClick = onChooseModelFile,
+                        shape = SettingsButtonShape,
+                        colors = settingsButtonColors(),
+                        modifier = Modifier.weight(1f).testTag("choose-model-file-button"),
+                      ) {
+                        Text("选择文件")
                       }
                     }
                   }
-                }
-                LocalModelStatus.DOWNLOADED -> {
-                  Button(
-                    onClick = onStartModel,
-                    modifier = Modifier.fillMaxWidth().testTag("start-model-button"),
-                  ) {
-                    Text("开启模型")
+                  LocalModelStatus.DOWNLOADING -> {
+                    val isImportingModel =
+                      localModelState.downloadBytes == 0L && localModelState.downloadProgress == 0f
+                    Column(
+                      modifier = Modifier.fillMaxWidth(),
+                      verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                      LinearProgressIndicator(
+                        progress = { localModelState.downloadProgress },
+                        modifier = Modifier.fillMaxWidth().testTag("download-progress-bar"),
+                      )
+                      Text(
+                        text = if (isImportingModel) "正在导入并校验模型文件，请稍候" else "正在下载模型，请稍候",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth().testTag("model-busy-text"),
+                      )
+                      if (!isImportingModel) {
+                        TextButton(
+                          onClick = onCancelDownload,
+                          colors = ButtonDefaults.textButtonColors(contentColor = ImperialCinnabar),
+                          modifier = Modifier.fillMaxWidth().testTag("cancel-download-button"),
+                        ) {
+                          Text("取消")
+                        }
+                      }
+                    }
                   }
-                }
-                LocalModelStatus.READY,
-                LocalModelStatus.INFERENCING -> {
-                  Button(
-                    onClick = onStopModel,
-                    modifier = Modifier.fillMaxWidth().testTag("stop-model-button"),
-                  ) {
-                    Text("停止模型")
+                  LocalModelStatus.DOWNLOADED -> {
+                    Button(
+                      onClick = onStartModel,
+                      shape = SettingsButtonShape,
+                      colors = settingsButtonColors(),
+                      modifier = Modifier.fillMaxWidth().testTag("start-model-button"),
+                    ) {
+                      Text("开启模型")
+                    }
                   }
+                  LocalModelStatus.READY,
+                  LocalModelStatus.INFERENCING -> {
+                    Button(
+                      onClick = onStopModel,
+                      shape = SettingsButtonShape,
+                      colors = settingsButtonColors(),
+                      modifier = Modifier.fillMaxWidth().testTag("stop-model-button"),
+                    ) {
+                      Text("停止模型")
+                    }
+                  }
+                  else -> {}
                 }
-                else -> {}
-              }
 
-              ExposedDropdownMenuBox(
-                expanded = backendExpanded,
-                onExpandedChange = { backendExpanded = it },
-                modifier = Modifier.fillMaxWidth().testTag("backend-preference-selector"),
-              ) {
-                OutlinedTextField(
-                  value =
-                    if (localModelState.activeBackend != InferenceBackend.UNKNOWN) {
-                      when (localModelState.activeBackend) {
-                        InferenceBackend.NPU -> "NPU"
-                        InferenceBackend.GPU -> "GPU"
-                        InferenceBackend.CPU -> "CPU"
-                        else -> "NPU"
-                      }
-                    } else {
-                      when (aiSettings.localBackendPreference) {
-                        InferenceBackend.NPU -> "NPU"
-                        InferenceBackend.GPU -> "GPU"
-                        InferenceBackend.CPU -> "CPU"
-                        else -> "NPU"
-                      }
-                    },
-                  onValueChange = {},
-                  readOnly = true,
-                  label = { Text("推理后端") },
-                  trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = backendExpanded)
-                  },
-                  modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
-                )
-                ExposedDropdownMenu(
+                ExposedDropdownMenuBox(
                   expanded = backendExpanded,
-                  onDismissRequest = { backendExpanded = false },
+                  onExpandedChange = { backendExpanded = it },
+                  modifier = Modifier.fillMaxWidth().testTag("backend-preference-selector"),
                 ) {
-                  DropdownMenuItem(
-                    text = { Text("NPU") },
-                    onClick = {
-                      onBackendPreferenceChange(InferenceBackend.NPU)
-                      backendExpanded = false
+                  OutlinedTextField(
+                    value =
+                      if (localModelState.activeBackend != InferenceBackend.UNKNOWN) {
+                        when (localModelState.activeBackend) {
+                          InferenceBackend.NPU -> "NPU"
+                          InferenceBackend.GPU -> "GPU"
+                          InferenceBackend.CPU -> "CPU"
+                          else -> "NPU"
+                        }
+                      } else {
+                        when (aiSettings.localBackendPreference) {
+                          InferenceBackend.NPU -> "NPU"
+                          InferenceBackend.GPU -> "GPU"
+                          InferenceBackend.CPU -> "CPU"
+                          else -> "NPU"
+                        }
+                      },
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("推理后端") },
+                    trailingIcon = {
+                      ExposedDropdownMenuDefaults.TrailingIcon(expanded = backendExpanded)
                     },
+                    shape = SettingsFieldShape,
+                    colors = settingsTextFieldColors(),
+                    textStyle =
+                      MaterialTheme.typography.bodyMedium.copy(fontFamily = ImperialDisplayFont),
+                    modifier =
+                      Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
                   )
-                  DropdownMenuItem(
-                    text = { Text("GPU") },
-                    onClick = {
-                      onBackendPreferenceChange(InferenceBackend.GPU)
-                      backendExpanded = false
-                    },
-                  )
-                  DropdownMenuItem(
-                    text = { Text("CPU") },
-                    onClick = {
-                      onBackendPreferenceChange(InferenceBackend.CPU)
-                      backendExpanded = false
-                    },
-                  )
-                }
-              }
-
-              if (
-                localModelState.status == LocalModelStatus.READY ||
-                  localModelState.status == LocalModelStatus.INFERENCING
-              ) {
-                Button(
-                  onClick = onRunBenchmark,
-                  enabled = !isBenchmarkRunning,
-                  modifier = Modifier.fillMaxWidth().testTag("benchmark-button"),
-                ) {
-                  if (isBenchmarkRunning) {
-                    CircularProgressIndicator(
-                      modifier =
-                        Modifier.padding(end = 8.dp).testTag("benchmark-loading-indicator"),
-                      color = MaterialTheme.colorScheme.onPrimary,
-                      strokeWidth = 2.dp,
+                  ExposedDropdownMenu(
+                    expanded = backendExpanded,
+                    onDismissRequest = { backendExpanded = false },
+                  ) {
+                    DropdownMenuItem(
+                      text = { Text("NPU") },
+                      onClick = {
+                        onBackendPreferenceChange(InferenceBackend.NPU)
+                        backendExpanded = false
+                      },
+                    )
+                    DropdownMenuItem(
+                      text = { Text("GPU") },
+                      onClick = {
+                        onBackendPreferenceChange(InferenceBackend.GPU)
+                        backendExpanded = false
+                      },
+                    )
+                    DropdownMenuItem(
+                      text = { Text("CPU") },
+                      onClick = {
+                        onBackendPreferenceChange(InferenceBackend.CPU)
+                        backendExpanded = false
+                      },
                     )
                   }
-                  Text("测试推理速度")
                 }
 
-                benchmarkResult?.let { result ->
-                  Text(
-                    text =
-                      "预填充: %.1f tk/s (%d tokens) | 解码: %.1f tk/s (%d tokens) | TTFT: %dms | 后端: %s"
-                        .format(
-                          result.prefillTokensPerSecond,
-                          result.promptTokens,
-                          result.decodeTokensPerSecond,
-                          result.generateTokens,
-                          result.timeToFirstTokenMs,
-                          when (result.backend) {
-                            InferenceBackend.NPU -> "NPU"
-                            InferenceBackend.GPU -> "GPU"
-                            InferenceBackend.CPU -> "CPU"
-                            else -> "UNKNOWN"
-                          },
-                        ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.fillMaxWidth().testTag("benchmark-result-text"),
-                  )
-                }
-              }
+                if (
+                  localModelState.status == LocalModelStatus.READY ||
+                    localModelState.status == LocalModelStatus.INFERENCING
+                ) {
+                  Button(
+                    onClick = onRunBenchmark,
+                    enabled = !isBenchmarkRunning,
+                    shape = SettingsButtonShape,
+                    colors = settingsButtonColors(),
+                    modifier = Modifier.fillMaxWidth().testTag("benchmark-button"),
+                  ) {
+                    if (isBenchmarkRunning) {
+                      CircularProgressIndicator(
+                        modifier =
+                          Modifier.padding(end = 8.dp).testTag("benchmark-loading-indicator"),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp,
+                      )
+                    }
+                    Text("测试推理速度")
+                  }
 
-              if (localModelState.status == LocalModelStatus.ERROR) {
-                localModelState.errorMessage?.let { msg ->
-                  Text(
-                    text = msg,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.fillMaxWidth().testTag("model-error-text"),
-                  )
+                  benchmarkResult?.let { result ->
+                    Text(
+                      text =
+                        "预填充: %.1f tk/s (%d tokens) | 解码: %.1f tk/s (%d tokens) | TTFT: %dms | 后端: %s"
+                          .format(
+                            result.prefillTokensPerSecond,
+                            result.promptTokens,
+                            result.decodeTokensPerSecond,
+                            result.generateTokens,
+                            result.timeToFirstTokenMs,
+                            when (result.backend) {
+                              InferenceBackend.NPU -> "NPU"
+                              InferenceBackend.GPU -> "GPU"
+                              InferenceBackend.CPU -> "CPU"
+                              else -> "UNKNOWN"
+                            },
+                          ),
+                      style = MaterialTheme.typography.bodyMedium,
+                      color = MaterialTheme.colorScheme.primary,
+                      modifier = Modifier.fillMaxWidth().testTag("benchmark-result-text"),
+                    )
+                  }
+                }
+
+                if (localModelState.status == LocalModelStatus.ERROR) {
+                  localModelState.errorMessage?.let { msg ->
+                    Text(
+                      text = msg,
+                      style = MaterialTheme.typography.bodyMedium,
+                      color = MaterialTheme.colorScheme.error,
+                      modifier = Modifier.fillMaxWidth().testTag("model-error-text"),
+                    )
+                  }
                 }
               }
             }
-          }
 
-          if (aiSettings.engineType != AiEngineType.LOCAL_MODEL) {
-            Button(
-              onClick = {
-                latencyResultText = null
-                isTestingLatency = true
-                coroutineScope.launch {
-                  val result = testLatency(aiSettings, aiSettings.apiKey)
-                  latencyResultText =
-                    when (result) {
-                      is AiEndpointLatencyResult.Success -> "延迟：${result.elapsedMillis} ms"
-                      is AiEndpointLatencyResult.Failure -> "测试失败：${result.message}"
-                    }
-                  isTestingLatency = false
+            if (aiSettings.engineType != AiEngineType.LOCAL_MODEL) {
+              Button(
+                onClick = {
+                  latencyResultText = null
+                  isTestingLatency = true
+                  coroutineScope.launch {
+                    val result = testLatency(aiSettings, aiSettings.apiKey)
+                    latencyResultText =
+                      when (result) {
+                        is AiEndpointLatencyResult.Success -> "延迟：${result.elapsedMillis} ms"
+                        is AiEndpointLatencyResult.Failure -> "测试失败：${result.message}"
+                      }
+                    isTestingLatency = false
+                  }
+                },
+                enabled = !isTestingLatency,
+                shape = SettingsButtonShape,
+                colors = settingsButtonColors(),
+                modifier = Modifier.fillMaxWidth().testTag("test-api-latency-button"),
+              ) {
+                if (isTestingLatency) {
+                  CircularProgressIndicator(
+                    modifier = Modifier.padding(end = 8.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp,
+                  )
                 }
-              },
-              enabled = !isTestingLatency,
-              modifier = Modifier.fillMaxWidth().testTag("test-api-latency-button"),
-            ) {
-              if (isTestingLatency) {
-                CircularProgressIndicator(
-                  modifier = Modifier.padding(end = 8.dp),
-                  color = MaterialTheme.colorScheme.onPrimary,
-                  strokeWidth = 2.dp,
+                Text("测试 API 延迟")
+              }
+
+              latencyResultText?.let { text ->
+                Text(
+                  text = text,
+                  style = MaterialTheme.typography.bodyMedium,
+                  color =
+                    when {
+                      text.startsWith("延迟：") -> MaterialTheme.colorScheme.primary
+                      else -> MaterialTheme.colorScheme.error
+                    },
+                  modifier = Modifier.fillMaxWidth().testTag("api-latency-result"),
                 )
               }
-              Text("测试 API 延迟")
-            }
-
-            latencyResultText?.let { text ->
-              Text(
-                text = text,
-                style = MaterialTheme.typography.bodyMedium,
-                color =
-                  when {
-                    text.startsWith("延迟：") -> MaterialTheme.colorScheme.primary
-                    else -> MaterialTheme.colorScheme.error
-                  },
-                modifier = Modifier.fillMaxWidth().testTag("api-latency-result"),
-              )
             }
           }
         }
@@ -597,6 +670,9 @@ fun SettingsPane(
           label = { Text("预设名称") },
           singleLine = true,
           isError = savePresetError != null,
+          shape = SettingsFieldShape,
+          colors = settingsTextFieldColors(),
+          textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = ImperialDisplayFont),
           supportingText = savePresetError?.let { { Text(it) } },
           modifier = Modifier.fillMaxWidth(),
         )
@@ -604,3 +680,64 @@ fun SettingsPane(
     }
   }
 }
+
+@Composable
+private fun SettingsPaperSection(content: @Composable ColumnScope.() -> Unit) {
+  Box(
+    modifier =
+      Modifier.fillMaxWidth()
+        .shadow(9.dp, SettingsPanelShape, clip = false)
+        .clip(SettingsPanelShape)
+        .background(ImperialIvory, SettingsPanelShape)
+        .border(0.8.dp, Color.Black.copy(alpha = 0.1f), SettingsPanelShape)
+  ) {
+    Image(
+      painter = painterResource(id = R.drawable.home_search_tile),
+      contentDescription = null,
+      modifier = Modifier.matchParentSize(),
+      contentScale = ContentScale.Crop,
+      alpha = 0.82f,
+    )
+    Box(modifier = Modifier.matchParentSize().background(Color.White.copy(alpha = 0.3f)))
+    Box(
+      modifier =
+        Modifier.matchParentSize()
+          .background(
+            Brush.horizontalGradient(
+              0f to Color.Transparent,
+              0.78f to Color.Transparent,
+              0.92f to Color.Black.copy(alpha = 0.05f),
+              1f to Color.White.copy(alpha = 0.24f),
+            )
+          )
+    )
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(18.dp),
+      content = content,
+    )
+  }
+}
+
+@Composable
+private fun settingsTextFieldColors() =
+  OutlinedTextFieldDefaults.colors(
+    focusedTextColor = Color.Black,
+    unfocusedTextColor = Color.Black,
+    focusedContainerColor = Color.White.copy(alpha = 0.5f),
+    unfocusedContainerColor = Color.White.copy(alpha = 0.36f),
+    focusedBorderColor = ImperialCinnabar.copy(alpha = 0.62f),
+    unfocusedBorderColor = Color.Black.copy(alpha = 0.16f),
+    focusedLabelColor = ImperialCinnabar,
+    unfocusedLabelColor = Color.Black.copy(alpha = 0.56f),
+    cursorColor = ImperialCinnabar,
+  )
+
+@Composable
+private fun settingsButtonColors(): ButtonColors =
+  ButtonDefaults.buttonColors(
+    containerColor = ImperialCinnabar,
+    contentColor = Color.White,
+    disabledContainerColor = ImperialParchment,
+    disabledContentColor = Color.Black.copy(alpha = 0.38f),
+  )
