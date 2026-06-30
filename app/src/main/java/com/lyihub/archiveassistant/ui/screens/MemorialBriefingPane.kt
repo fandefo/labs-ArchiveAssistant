@@ -79,7 +79,7 @@ import kotlinx.coroutines.delay
 private const val MemorialCoverAspect = 1.1f / 2f
 private const val MemorialWheelItemCount = 20
 private const val MemorialActiveSlotDegrees = 225f
-private const val MemorialWheelDragDegreesPerPixel = -0.18f
+private const val MemorialWheelDragDegreesPerPixel = -0.10f
 private const val MemorialWheelActiveScale = 1.58f
 private const val MemorialWheelFocusHalfRangeDegrees = 24f
 private const val MemorialWheelDepartmentLabelVisibleStart = 0.8f

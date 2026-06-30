@@ -1507,7 +1507,11 @@ internal class MemorialFoldView(context: Context) : View(context) {
   }
 
   private fun controlsViewportWidth(): Float {
-    return (foldRight - foldLeft).coerceAtLeast(1f)
+    return (foldRight - foldLeft - controlsHorizontalInset() * 2f).coerceAtLeast(1f)
+  }
+
+  private fun controlsHorizontalInset(): Float {
+    return if (foldRight - foldLeft < dp(420f)) dp(10f) else 0f
   }
 
   private fun controlsResponsiveScale(): Float {
@@ -2190,8 +2194,8 @@ internal class MemorialFoldView(context: Context) : View(context) {
       shadowRight = min(rect.right, clampedPivotX + shadowWidth)
       colors =
         intArrayOf(
-          AndroidColor.argb(peakAlpha, 72, 48, 26),
-          AndroidColor.argb((peakAlpha * 0.34f).roundToInt(), 90, 68, 38),
+          AndroidColor.argb(peakAlpha, 0, 0, 0),
+          AndroidColor.argb((peakAlpha * 0.26f).roundToInt(), 0, 0, 0),
           AndroidColor.TRANSPARENT,
         )
     } else {
@@ -2200,8 +2204,8 @@ internal class MemorialFoldView(context: Context) : View(context) {
       colors =
         intArrayOf(
           AndroidColor.TRANSPARENT,
-          AndroidColor.argb((peakAlpha * 0.34f).roundToInt(), 90, 68, 38),
-          AndroidColor.argb(peakAlpha, 72, 48, 26),
+          AndroidColor.argb((peakAlpha * 0.26f).roundToInt(), 0, 0, 0),
+          AndroidColor.argb(peakAlpha, 0, 0, 0),
         )
     }
 
@@ -2239,8 +2243,8 @@ internal class MemorialFoldView(context: Context) : View(context) {
       edgeRight = min(rect.right, pivotX + edgeWidth)
       colors =
         intArrayOf(
-          AndroidColor.argb((30f * t).roundToInt(), 94, 65, 35),
-          AndroidColor.argb((18f * t).roundToInt(), 210, 181, 124),
+          AndroidColor.argb((24f * t).roundToInt(), 0, 0, 0),
+          AndroidColor.argb((12f * t).roundToInt(), 255, 255, 255),
           AndroidColor.TRANSPARENT,
         )
     } else {
@@ -2249,8 +2253,8 @@ internal class MemorialFoldView(context: Context) : View(context) {
       colors =
         intArrayOf(
           AndroidColor.TRANSPARENT,
-          AndroidColor.argb((18f * t).roundToInt(), 210, 181, 124),
-          AndroidColor.argb((30f * t).roundToInt(), 94, 65, 35),
+          AndroidColor.argb((12f * t).roundToInt(), 255, 255, 255),
+          AndroidColor.argb((24f * t).roundToInt(), 0, 0, 0),
         )
     }
     if (edgeRight <= edgeLeft) return
