@@ -239,11 +239,11 @@ private fun MemorialCoverWheel(
       }
   ) {
     val panelMin = min(maxWidth.value, maxHeight.value).dp
-    val radius = panelMin * 0.59f
+    val radius = panelMin * 0.66f
     val innerRadius = radius * 0.69f
     val wheelCenterX = maxWidth + 58.dp
     val centerY = maxHeight * 0.69f
-    val cardWidth = 58.dp
+    val cardWidth = 61.dp
     val pendingStampLines = pendingStampLines(pendingCount)
     val pendingStampHeight = 14.dp + 31.dp * pendingStampLines.size
     val pendingStampWidth = 48.dp

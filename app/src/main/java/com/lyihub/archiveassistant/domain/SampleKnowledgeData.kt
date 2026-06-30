@@ -17,6 +17,7 @@ object SampleKnowledgeData {
         summary = "qianguyihao 维护的中文独立博客索引，适合作为作者和信息源人脉库入口。",
         fullText = "中文博客琅琊榜收录持续更新、高质量、阅读体验良好的独立博客，可用于维护长期关注的作者和站点名单。",
         sourceUrl = "https://github.com/qianguyihao/blog-list",
+        imageResName = "article_officials_001_blog_list",
         createdAtEpochMillis = 1_720_000_000_000,
       ),
       KnowledgeItem(
@@ -57,6 +58,7 @@ object SampleKnowledgeData {
         summary = "少数派文章介绍导出支付宝 CSV 并构建账单分析网页，包含账单截图和字段说明。",
         fullText = "文章从支付宝交易流水证明导出、CSV 字段结构、年度总览、分类分析、热力图和隐私缓存策略展开。",
         sourceUrl = "https://sspai.com/post/96151",
+        imageResName = "article_treasury_001_sspai_alipay",
         createdAtEpochMillis = 1_720_345_600_000,
       ),
       KnowledgeItem(
@@ -79,6 +81,7 @@ object SampleKnowledgeData {
         summary = "Justin Yan 分享统一账户、交易类型、转账排除和自动分类的个人财务统计方法。",
         fullText = "文章把账户分为信用卡、活期、理财、股票等类别，并强调转账不能重复计入支出。",
         sourceUrl = "https://justinyan.me/post/4427",
+        imageResName = "article_treasury_003_personal_finance",
         createdAtEpochMillis = 1_720_518_400_000,
       ),
       KnowledgeItem(
@@ -103,6 +106,7 @@ object SampleKnowledgeData {
         fullText = "《动手学深度学习》包含线性网络、CNN、RNN、Transformer、优化算法和 NLP 等章节，适合作为长文档学习输入。",
         sourceUrl = null,
         fileName = "d2l-zh-pytorch.pdf",
+        imageResName = "article_rites_001_d2l_front",
         createdAtEpochMillis = 1_720_691_200_000,
       ),
       KnowledgeItem(
@@ -115,6 +119,7 @@ object SampleKnowledgeData {
         fullText = "南瓜书围绕周志华《机器学习》的公式推导进行补充，提供 GitHub、PDF release、勘误和学习资源。",
         sourceUrl = null,
         fileName = "pumpkin-book.pdf",
+        imageResName = "article_rites_002_pumpkin_book",
         createdAtEpochMillis = 1_720_777_600_000,
       ),
       KnowledgeItem(
@@ -125,6 +130,7 @@ object SampleKnowledgeData {
         summary = "阮一峰长期维护的技术与信息输入周刊，适合归档为高质量网页文章源。",
         fullText = "科技爱好者周刊收集科技新闻、工具、文章和观点，可作为持续学习输入和信息筛选样本。",
         sourceUrl = "https://github.com/ruanyf/weekly",
+        imageResName = "article_rites_003_ruanyifeng_weekly",
         createdAtEpochMillis = 1_720_864_000_000,
       ),
       KnowledgeItem(
@@ -147,6 +153,7 @@ object SampleKnowledgeData {
         fullText =
           "Open Health Agent 使用 Bun、TypeScript、SQLite、Drizzle、Hono 和 Vue，支持微信、QQ Bot 与 WebSocket 通道。",
         sourceUrl = "https://github.com/yaotutu/open-health-agent",
+        imageResName = "article_military_001_open_health_agent",
         createdAtEpochMillis = 1_721_036_800_000,
       ),
       KnowledgeItem(
@@ -182,6 +189,7 @@ object SampleKnowledgeData {
         summary = "Wisely Chen 介绍用 AI、Apple 健康导出和图片资料整理健康数据的实际流程。",
         fullText = "文章覆盖 Apple 健康 ZIP/XML 导出、健检报告图片抽取、Markdown 输出和本地运行隐私注意事项。",
         sourceUrl = "https://ai-coding.wiselychen.com/personal-health-data-ai-analysis-system/",
+        imageResName = "article_military_004_personal_health_ai",
         createdAtEpochMillis = 1_721_296_000_000,
       ),
       KnowledgeItem(
@@ -235,6 +243,7 @@ object SampleKnowledgeData {
         summary = "思涯谷的树莓派系统优化和功能配置教程，适合工程实操归档。",
         fullText = "文章汇总安装系统、SSH、屏幕旋转、网络配置、软件安装和硬件控制等树莓派使用方法。",
         sourceUrl = "https://baohuiming.net/post/raspberry-pi",
+        imageResName = "article_works_001_raspberry_pi",
         createdAtEpochMillis = 1_721_728_000_000,
       ),
       KnowledgeItem(
@@ -288,6 +297,7 @@ object SampleKnowledgeData {
         summary = "Ghostty 官方配置参考可用于归档终端玩家、配置作者和高质量 dotfiles 来源。",
         fullText = "Ghostty configuration reference 覆盖字体、主题、键位、窗口和平台差异，是收集终端配置作者与插件生态资料的基础链接。",
         sourceUrl = "https://ghostty.org/docs/config/reference",
+        imageResName = "article_officials_006_ghostty_config",
         createdAtEpochMillis = 1_722_160_000_000,
       ),
       KnowledgeItem(
@@ -366,6 +376,7 @@ object SampleKnowledgeData {
         fullText = "本地 PDF 夹具记录 Blackwell 架构要点、FP4 推理、RAS、Confidential Computing 和多 GPU 互连信息。",
         sourceUrl = null,
         fileName = "nvidia-blackwell-architecture.pdf",
+        imageResName = "article_rites_005_nvidia_blackwell",
         createdAtEpochMillis = 1_722_764_800_000,
       ),
       KnowledgeItem(
@@ -411,6 +422,7 @@ object SampleKnowledgeData {
         summary = "Dify 官方文档中的工作流与 Agent 编排入口，适合效率工具库归档。",
         fullText = "Dify docs 覆盖聊天助手、Agent、工作流、知识库、工具调用和部署配置，可作为生产力兵器库入口。",
         sourceUrl = "https://docs.dify.ai/",
+        imageResName = "article_military_005_dify_docs",
         createdAtEpochMillis = 1_723_110_400_000,
       ),
       KnowledgeItem(
@@ -502,6 +514,7 @@ object SampleKnowledgeData {
         fullText = "本地 Markdown 夹具模拟 OriginOS Fold 体验视频脚本，覆盖开场、系统动效、多任务、外屏内屏切换和素材需求。",
         sourceUrl = null,
         fileName = "vivo-x-fold-video-script.md",
+        imageResName = "article_works_005_vivo_fold_script",
         createdAtEpochMillis = 1_723_801_600_000,
       ),
       KnowledgeItem(
@@ -513,6 +526,7 @@ object SampleKnowledgeData {
         fullText =
           "Docker Compose docs 覆盖 compose.yaml、services、volumes、networks、profiles 和多容器环境复现，是工程搭建样本。",
         sourceUrl = "https://docs.docker.com/compose/",
+        imageResName = "article_works_006_docker_compose",
         createdAtEpochMillis = 1_723_888_000_000,
       ),
       KnowledgeItem(
@@ -523,6 +537,7 @@ object SampleKnowledgeData {
         summary = "OpenCode GitHub 仓库，适合作为本地编码 Agent 环境搭建资料。",
         fullText = "OpenCode 仓库记录安装、运行、配置和开发 Agent 的入口，可归档为本地部署与环境搭建样本。",
         sourceUrl = "https://github.com/sst/opencode",
+        imageResName = "article_works_007_opencode",
         createdAtEpochMillis = 1_723_974_400_000,
       ),
       KnowledgeItem(
@@ -533,6 +548,7 @@ object SampleKnowledgeData {
         summary = "Ultralytics 官方训练文档，可用于麻将牌识别、标注和推理流程归档。",
         fullText = "Ultralytics train mode 文档说明数据集 YAML、模型选择、训练参数、验证和导出，适合 DIY 视觉项目。",
         sourceUrl = "https://docs.ultralytics.com/modes/train/",
+        imageResName = "article_works_008_ultralytics_train",
         createdAtEpochMillis = 1_724_060_800_000,
       ),
     )

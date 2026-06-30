@@ -152,9 +152,18 @@ class ArchiveAssistantStateStore(
   }
 
   private fun mergeBuiltInSampleItems(items: List<KnowledgeItem>): List<KnowledgeItem> {
+    val builtInSamplesById = SampleKnowledgeData.items.associateBy { it.id }
+    val updatedItems = items.map { item ->
+      val builtInSample = builtInSamplesById[item.id]
+      if (item.imageResName == null && builtInSample?.imageResName != null) {
+        item.copy(imageResName = builtInSample.imageResName)
+      } else {
+        item
+      }
+    }
     val existingIds = items.mapTo(mutableSetOf()) { it.id }
     val missingSamples = SampleKnowledgeData.items.filter { existingIds.add(it.id) }
-    return items + missingSamples
+    return updatedItems + missingSamples
   }
 
   private fun saveAiSettings() {

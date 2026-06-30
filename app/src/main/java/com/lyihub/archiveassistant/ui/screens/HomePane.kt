@@ -325,7 +325,7 @@ private fun TitleCell(
         modifier = Modifier.clickable(onClick = onTitlePulseRequested),
       )
       Text(
-        text = "拾取资料、整理主题、批阅奏折、瀑布流阅读",
+        text = "拾取资料、整理主题、批阅奏折",
         style = MaterialTheme.typography.titleSmall.copy(fontFamily = ImperialDisplayFont),
         color = Color.Black.copy(alpha = 0.72f),
         maxLines = 1,
@@ -416,11 +416,7 @@ private fun HomeFeatureCell(
         val activeOrnamentSize = ornamentSize * 0.5f
         val activeOrnamentOffsetY = -(maxHeight / 2f) + activeOrnamentSize / 2f + 8.dp
         val activeOrnamentOffsetX =
-          if (ornamentAlignment == Alignment.CenterStart) {
-            -(maxWidth / 2f) + activeOrnamentSize / 2f + 8.dp
-          } else {
-            maxWidth / 2f - activeOrnamentSize / 2f - 8.dp
-          }
+          if (ornamentAlignment == Alignment.CenterStart) 8.dp else (-8).dp
         val ornamentX = lerpDp(ornamentOffsetX, activeOrnamentOffsetX, workProgress)
         val ornamentY = lerpDp(ornamentOffsetY, activeOrnamentOffsetY, workProgress)
         val animatedOrnamentSize = lerpDp(ornamentSize, activeOrnamentSize, workProgress)
