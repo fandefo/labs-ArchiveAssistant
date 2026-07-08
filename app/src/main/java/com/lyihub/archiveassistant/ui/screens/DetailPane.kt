@@ -164,6 +164,7 @@ fun DetailPane(
       LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
+        overscrollEffect = null,
         contentPadding =
           PaddingValues(
             start = horizontalPadding,
@@ -185,6 +186,7 @@ fun DetailPane(
             } else {
               ArticleMasonryGrid(
                 items = filteredItems,
+                searchQuery = searchQuery,
                 onItemClick = onItemClick,
                 modifier = Modifier.fillMaxWidth(),
               )
@@ -249,6 +251,7 @@ private fun ArticleFilterBar(
     )
     LazyRow(
       modifier = Modifier.weight(1f),
+      overscrollEffect = null,
       horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
       items(tags) { tag ->
@@ -284,6 +287,7 @@ private fun EmptyFilteredShelf(modifier: Modifier = Modifier) {
 @Composable
 private fun ArticleMasonryGrid(
   items: List<KnowledgeItem>,
+  searchQuery: String,
   onItemClick: (String) -> Unit,
   modifier: Modifier = Modifier,
 ) {
@@ -300,6 +304,7 @@ private fun ArticleMasonryGrid(
         columns[column].forEach { card ->
           MemorialArticleCard(
             item = card.item,
+            searchQuery = searchQuery,
             onClick = { onItemClick(card.item.id) },
             modifier = Modifier.fillMaxWidth(),
           )
@@ -367,6 +372,7 @@ private fun folderDescription(topic: Topic): String {
 @Composable
 private fun MemorialArticleCard(
   item: KnowledgeItem,
+  searchQuery: String,
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
@@ -423,7 +429,13 @@ private fun MemorialArticleCard(
         verticalArrangement = Arrangement.spacedBy(7.dp),
       ) {
         Text(
-          text = item.title,
+          text =
+            buildHighlightedText(
+              text = item.title,
+              query = searchQuery,
+              highlightColor = DetailInk,
+              highlightBgColor = Color(0xFFF2D88A).copy(alpha = 0.84f),
+            ),
           style = MaterialTheme.typography.titleSmall,
           color = DetailInk,
           fontWeight = FontWeight.Normal,
