@@ -88,4 +88,6 @@ app/src/main/java/com/lyihub/archiveassistant/
 
 ## 许可
 
-当前仓库未声明许可证。正式开源或发布前请补充 `LICENSE` 文件。
+项目源代码按 GNU General Public License v3.0 or later 授权发布，详见 [LICENSE](LICENSE)。
+
+第三方依赖、字体、图片、PDF 和 mock 数据保留各自原始授权。已知依赖与资源核验状态记录在 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。其中部分打包资源仍缺少完整来源和授权记录，正式发布前需要完成素材来源核验或替换。
